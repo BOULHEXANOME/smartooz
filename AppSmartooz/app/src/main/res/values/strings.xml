@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">AppSmartooz</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_parcours">Parcours</string>
+    <string name="visite_lyon">Visiter Lyon</string>
+</resources>
