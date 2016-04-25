@@ -1,29 +1,63 @@
-drop table if exists USERS;
-create table USERS (
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
   id integer primary key autoincrement,
   email text not null,
   password text not null,
-  username text unique not null,
-  is_admin integer not null
+  username text unique not null
 );
 
-drop table if exists ARTICLES;
-create table ARTICLES (
+DROP TABLE IF EXISTS keywords;
+CREATE TABLE keywords (
   id integer primary key autoincrement,
-  price integer not null,
-  is_accepted integer not null,
-  is_read integer not null,
-  photo text not null,
+  name text not null
+);
+
+DROP TABLE IF EXISTS place_keywords;
+CREATE TABLE place_keywords (
+  id_place_or_circuit integer not null,
+  id_keyword integer not null,
+  UNIQUE(id_place_or_circuit, id_keyword)
+);
+
+DROP TABLE IF EXISTS places;
+CREATE TABLE places (
+  id integer primary key autoincrement,
+  lat float not null,
+  long float not null,
+  address text,
+  phone text,
+  website text,
+  openning_hours text,
   name text not null,
   description text not null,
+  id_user integer not null,
+  note_5 float not null
+);
+
+DROP TABLE IF EXISTS circuit_places;
+CREATE TABLE circuit_places (
+  id_circuit integer not null,
+  id_place integer not null,
+  UNIQUE(id_place, id_circuit)
+);
+
+DROP TABLE IF EXISTS circuit;
+CREATE TABLE circuit (
+  id integer primary key autoincrement,
+  name text not null,
+  description text not null,
+  length_km float not null,
+  height_difference_m float not null,
+  note_5 float not null,
   id_user integer not null
 );
 
-DELETE FROM USERS;
-DELETE FROM ARTICLES;
+DELETE FROM users;
+DELETE FROM places;
+DELETE FROM place_keywords;
+DELETE FROM keywords;
+DELETE FROM circuit;
+DELETE FROM circuit_places;
 
-insert into USERS (email, password, username, is_admin) values ('hugoss1@hotmail.fr', 'hihi', 'hugo', 1);
-insert into USERS (email, password, username, is_admin) values ('hugo@hotmail.fr', 'bla', 'hugo2', 0);
-
-insert into ARTICLES (name, price, is_accepted, is_read, photo, description, id_user) values ('Cafetiere toute neuve', 50, 0, 0, 'https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fi2.cdscdn.com%2Fpdt2%2F8%2F2%2F6%2F1%2F700x700%2Fbia8006363039826%2Frw%2Fmachine-a-cafe-italienne-bialetti-dama-glamour.jpg&f=1', 'superbe cafetière', 1);
-insert into ARTICLES (name, price, is_accepted, is_read, photo, description, id_user) values ('Cafetiere de m***e', 75, 1, 0, 'https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fi2.cdscdn.com%2Fpdt2%2F8%2F2%2F6%2F1%2F700x700%2Fbia8006363039826%2Frw%2Fmachine-a-cafe-italienne-bialetti-dama-glamour.jpg&f=1', "j'essaie de refiler une cafetière que l'on m'a vendu sur ce site de m***" , 2);
+insert into users (email, password, username) values ('hugoss1@hotmail.fr', 'hugo', 'hugo');
+insert into users (email, password, username) values ('hugo@hotmail.fr', 'hugo2', 'hugo2');
