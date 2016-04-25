@@ -81,24 +81,62 @@ def show_articles():
     return render_template('show_articles.html', articles=articles, flag=flag)
 
 
-@app.route('/add', methods=['POST'])
-def add_article():
+@app.route('/add-place', methods=['POST'])
+def add_place():
+    # curl -X POST -d '{"latitude":45.75,"longitude":4.8,"address":"ta mere","openning_hours":"tout le temps","name":"tour papine","description":"flemme", "note":5,"keywords":["sfm", "HOHO"]}' http://127.0.0.1:5000/add-place --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+    resp = {
+        'status': 'KO'
+    }
+    import json
     if not session.get('user_id'):
-        flash('Please login or register to access our services.')
-        return redirect(url_for('register'))
+        resp['error'] = 'Please login or register to access our services.'
+    else:
+        request_json = request.get_json()
+        try:
+            if float(request_json.get('note')) < 0 or float(request_json.get('note')) > 5:
+                resp['error'] = 'Note between 0 and 5.'
+            else:
+                if float(request_json.get('latitude')) < 45.7 or float(request_json.get('latitude')) > 45.8 or float(request_json.get('longitude'))<4.7 or float(request_json.get('longitude'))>5.0:
+                    resp['error'] = 'Note between 0 and 5.'
+                else:
+                    if not request_json.get('keywords'):
+                        resp['error'] = 'No keywords given.'
+                    else:
+                        db = get_db()
+                        db.execute('INSERT INTO places (lat, long, address, phone, website, openning_hours, name, description, id_user, note_5) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                                   [float(request_json.get('latitude')), 
+                                   float(request_json.get('longitude')), 
+                                   request_json.get('address'), 
+                                   request_json.get('phone'), 
+                                   request_json.get('website'), 
+                                   request_json.get('openning_hours'), 
+                                   request_json.get('name'), 
+                                   request_json.get('description'), 
+                                   session.get('user_id'), 
+                                   float(request_json.get('note'))])
+                        db.commit()
 
-    try:
-        price = int(request.form['price'])
-        if price < 0:
-            abort(400)
-        db = get_db()
-        db.execute('insert into articles (name, description, price, is_accepted, is_read, photo, id_user) values (?, ?, ?, 0, 0, ?, ?)',
-                   [request.form['name'], request.form['description'], price, request.form['photo'], session.get('user_id')])
-        db.commit()
-    except ValueError:
-        abort(400)
-    flash('New ad was successfully posted. An admin will check it as soon as possible !')
-    return redirect(url_for('show_articles'))
+                        cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?', [float(request_json.get('latitude')), float(request_json.get('longitude'))])
+                        place_inserted = cur.fetchone()
+
+                        for k in request_json.get('keywords'):
+                            k = k.upper()
+                            db = get_db()
+                            cur = db.execute('SELECT * FROM keywords where name=?', [k])
+                            keyword = cur.fetchone()
+                            if not keyword:
+                                db = get_db()
+                                db.execute('INSERT INTO keywords (name) values (?)', [k])
+                                db.commit()
+                                cur = db.execute('SELECT * FROM keywords where name=?', [k])
+                                keyword = cur.fetchone()
+                            # on peut inserer la relation place/keyword
+                            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) values (?, ?)', [place_inserted['id'], keyword['id']])
+                            db.commit()
+                        resp['status'] = 'OK'
+        except:
+            resp['error'] = 'An error occured while inserting place.'
+    return render_template('response.json', response=json.dumps(resp))
 
 
 @app.route('/update/<int:article_id>', methods=['POST', 'GET'])

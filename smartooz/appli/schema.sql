@@ -31,7 +31,8 @@ CREATE TABLE places (
   name text not null,
   description text not null,
   id_user integer not null,
-  note_5 float not null
+  note_5 float not null,
+  UNIQUE(lat, long)
 );
 
 DROP TABLE IF EXISTS circuit_places;
