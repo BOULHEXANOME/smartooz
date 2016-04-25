@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 # Load default config and override config from an environment variable
 app.config.update(dict(
-    DATABASE=os.path.join(app.root_path, 'csrf.db'),
+    DATABASE=os.path.join(app.root_path, 'smartooz.db'),
     DEBUG=True,
     SECRET_KEY='development key',
 ))
@@ -102,8 +102,7 @@ def show_articles():
     else:
         cur = db.execute('select * from articles where id_user=?',
                             [session.get('user_id')])
-    with open('.flag') as f:
-        flag = f.read()
+    flag = "coucou"
     articles = cur.fetchall()
     return render_template('show_articles.html', articles=articles, flag=flag)
 
