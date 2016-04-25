@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+{% block ads_active %}active{% endblock %}
+{% block body %}
+
+  
+    <div class="row">
+        <div class="col-xs-12">
+            <h2>You can post your ads using the form bellow</h2>
+            <div class="row">
+            <form action="{{ url_for('add_article') }}" method="post">
+                <div class="col-xs-12 input-group">
+                    <input type="text" class="form-control" placeholder="Your ad's name" id="name" name="name" autofocus="">
+                </div>
+                <div class="col-xs-12 input-group">
+                    <input type="text" class="form-control" placeholder="Your ad's photo's URL" id="photo" name="photo">
+                </div>
+                <div class="col-xs-12 input-group">
+                    <input type="number" class="form-control" placeholder="Your ad's price (€)" id="price" name="price" min="0">
+                </div>
+                <div class="col-xs-12 input-group">
+                    <textarea name="description" class="form-control" id="description" placeholder="Your ad's description"></textarea>
+                </div>
+                <div class="col-xs-12 input-group">
+                    <button type="submit" class="btn btn-lg btn-default btn-block">Submit your ad</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-12">
+        <h2>Here are your ads</h2>
+        <ul>
+        {% for article in articles %}
+          <li class="box">
+            <h2>
+              {{ article.name }}
+              <small>- {{ article.price }}€</small>
+            </h2>
+            <div class="row">
+              <div class="col-xs-12">
+                <img src="{{ article.photo }}" class="img img-responsive">
+              </div>
+              <div class="col-xs-12">
+                <p>{{ article.description }}</p>
+              </div>
+              <div class="col-xs-2">
+                <a href="{{ url_for('update_article', article_id=article.id) }}" class="btn btn-default ">Edit this ad</a>.
+              </div>
+              <div class="col-xs-10 note">
+                <small>
+                {% if article.is_accepted == 1 %}
+                  {% if article.id_user == session.user_id %}
+                    <b>Congratulations ! Here is your flag : {{ flag }}</b>
+                  {% endif %}
+                  This ad is accepted. If you are an admin, you can click here to disable it : <a href="{{ url_for('disable_article', article_id=article.id) }}">disable ad.</a>
+                {% else %}
+                  This ad is not yet accepted. If you are an admin, you can click here to accept it : <a href="{{ url_for('accept_article', article_id=article.id) }}">accept ad.</a>
+                {% endif %}
+                </small>
+              </div>
+            </div>
+            </li>
+        {% else %}
+          <li class="box"><i>Unbelievable. You didn't post any ad yet :o</i></li>
+        {% endfor %}
+        </ul>
+      </div>
+    </div>
+{% endblock %}

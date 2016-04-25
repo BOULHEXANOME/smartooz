@@ -1,0 +1,88 @@
+body            { font-family: sans-serif; background: #eee; }
+
+#logo{
+	height: 95px;
+	top: -38px;
+	position: relative;
+	margin-left: 30px;
+}
+
+.navbar{
+	background-color: #232f3e;
+	color: rgb(17, 17, 17);
+}
+
+#loupe{
+	background-image: url("img/loupe.png");
+	height: 35px;
+	width: 45px;
+	background-color: #febd69;
+	background-repeat: no-repeat;
+	background-position: 10px 5px;
+	color: rgba(0,0,0,0);
+	border-color: #febd69;
+}
+
+.login{
+	height: 35px;
+}
+
+.search-group{
+	border-color: #febd69;
+}
+
+#dollar{
+	border-right-color: #999;
+}
+
+#username{
+	border-left-color: #ddd;
+}
+
+#password{
+	height: 35px;
+	border-left-width: 0;
+	border-bottom-left-radius: 0;
+	border-top-left-radius: 0;
+	border-left-color: #ddd;
+}
+#password-group{
+	margin-left: -4px;
+}
+
+#username{
+	border-bottom-right-radius: 0;
+	border-top-right-radius: 0;
+	border-right-color: #ddd;
+}
+
+#navbar > .navbar-right{
+	margin-right: 30px;
+}
+
+
+.navbar-form{
+	margin-right: 40px;
+}
+
+#page{
+	margin-top: 50px;
+}
+
+.alert{
+	margin-bottom: 2px;
+}
+
+li.box{
+	margin-bottom: 15px;
+	margin-top: 15px;
+	display: block;
+	background-color: #f8f8f8;
+	padding: 25px;
+	padding-top: 10px;
+}
+
+.note{
+	text-align: right;
+	padding-top: 15px;
+}
