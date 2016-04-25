@@ -53,40 +53,17 @@ def close_db(error):
 
 ###################################################################################################
 
-def is_admin():
-    if not session.get('user_id'):
-        return False
-    db = get_db()
-    cur = db.execute('select * from USERS where id=?',
-                        [session.get('user_id')])
-    user = cur.fetchone()
-    if not user:
-        session['user_id'] = None
-        return False
-    return user['is_admin'] == 1
 
 
 @app.route('/accept/<int:article_id>', methods=['GET'])
 def accept_article(article_id):
-    if is_admin():
-        db = get_db()
-        db.execute('UPDATE articles SET is_accepted=1 WHERE id=?', [article_id])
-        db.commit()
-        flash('Ad correctely updated.')
-    else:
-        flash('Invalid action. Sorry, only an admin can do this.')
+    flash('Invalid action. Sorry, only an admin can do this.')
     return redirect(url_for('show_articles'))
 
 
 @app.route('/disable/<int:article_id>', methods=['GET'])
 def disable_article(article_id):
-    if is_admin():
-        db = get_db()
-        db.execute('UPDATE articles SET is_accepted=0 WHERE id=?', [article_id])
-        db.commit()
-        flash('Ad correctely updated.')
-    else:
-        flash('Invalid action. Sorry, only an admin can do this.')
+    flash('Invalid action. Sorry, only an admin can do this.')
     return redirect(url_for('show_articles'))
 
 
@@ -97,10 +74,7 @@ def show_articles():
         return redirect(url_for('register'))
     db = get_db()
     flag = ''
-    if is_admin():
-        cur = db.execute('select * from articles')
-    else:
-        cur = db.execute('select * from articles where id_user=?',
+    cur = db.execute('select * from articles where id_user=?',
                             [session.get('user_id')])
     flag = "coucou"
     articles = cur.fetchall()
@@ -157,91 +131,64 @@ def update_article(article_id):
 
 @app.route('/login', methods=['POST'])
 def login():
-    error = None
-    import hashlib
-    password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
+    # curl -X POST -d '{"password":"hugo","username":"papin2"}' http://127.0.0.1:5000/login --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+    import hashlib, json
+    request_json = request.get_json()
+    password = hashlib.sha256(request_json.get('password', 'bla').encode('utf-8')).hexdigest()
     db = get_db()
     cur = db.execute('select * from users where password=? and username=?',
-                        [password, request.form['username']])
+                        [password, request_json.get('username', 'bla')])
     user = cur.fetchone()
-    if user == None:
-        flash('Invalid username/passowrd')
-    else:
+    resp = {
+        'status': 'KO'
+    }
+    if user != None:
         session['user_id'] = user['id']
-        flash('You were logged in')
-        return redirect(url_for('show_articles'))
-    return redirect(url_for('register'))
+        resp['status'] = 'OK'
+        resp['username'] = user['username']
+        resp['email'] = user['email']
+    return render_template('response.json', response=json.dumps(resp))
 
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['POST'])
 def register():
-    error = None
-    if request.method == 'POST':
-        import hashlib
-        password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
-        username = request.form['username']
-        email = request.form['email']
+    import hashlib, json
+    request_json = request.get_json()
+    password = hashlib.sha256(request_json.get('password').encode('utf-8')).hexdigest()
+    username = request_json.get('username')
+    email = request_json.get('email')
+    resp = {
+        'status': 'KO'
+    }
 
-        if not (password and username and email):
-            error = 'You didn\'t fill all the fields.'
-        else:
-            # race condition not handled
-            db = get_db()
-            cur = db.execute('select * from users where username=?', [username])
+    if not (request_json.get('password') and username and email):
+        resp['error'] = 'You didn\'t fill all the fields.'
+    else:
+        db = get_db()
+        cur = db.execute('select * from users where username=?', [username])
+        user = cur.fetchone()
+        if user == None:
+            db.execute('insert into USERS (email, password, username) values (?, ?, ?)',
+                            [email, password, username])
+            db.commit()
+            cur = db.execute('select * from users where password=? and username=?',
+                        [password, request_json.get('username', 'bla')])
             user = cur.fetchone()
-            if user == None:
-                db.execute('insert into USERS (email, password, username, is_admin) values (?, ?, ?, 0)',
-                                [email, password, username])
-                db.commit()
-                flash('You were successfully registered. Please log in using the form is the menu.')
-            else:
-                error = 'Sorry, username already exists.'
-    return render_template('register.html', error=error)
+            if user != None:
+                session['user_id'] = user['id']
+                resp['status'] = 'OK'
+                resp['username'] = user['username']
+                resp['email'] = user['email']
+        else:
+            resp['error'] = 'Sorry, username already exists.'
+    return render_template('response.json', response=json.dumps(resp))
 
 
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
-    flash('You were logged out')
-    return redirect(url_for('show_articles'))
-
-
-def delete_admins():
-    db = get_db()
-    db.execute('DELETE FROM users WHERE is_admin=1')
-    db.commit()
-
-
-def create_admin():
-    db = get_db()
-    db.execute('INSERT INTO users (email, password, username, is_admin) values ("hugo@htruc.fr", "cannot log with this on ;)", "the_only_admin", 1)')
-    db.commit()
-    cur_users = db.execute('SELECT * FROM users WHERE is_admin=1')
-    the_admin = cur_users.fetchone()
-    if not the_admin:
-        abort(404)
-    return the_admin['id']
-
-
-@app.route('/backdoor-bot-csrf/X1YEGZmNX75vcsHl470CfS9pCvqbDcbajmXS14d2/<int:id_article>')
-def backdoor_article(id_article):
-    db = get_db()
-    cur = db.execute('select * from articles where id=?', [id_article])
-    article = cur.fetchone()
-    if not article:
-        abort(404)
-    return render_template('csrf.html', article=article)
-
-
-@app.route('/backdoor-bot-csrf/X1YEGZmNX75vcsHl470CfS9pCvqbDcbajmXS14d2')
-def backdoor_list_articles():
-    db = get_db()
-    cur = db.execute('select * from articles')
-    articles = cur.fetchall()
-    ret = ''
-    for a in articles:
-        ret += str(a['id']) + ';'
-    delete_admins()
-    session['user_id'] = create_admin()
-    return ret
+    resp = {
+        'status': 'OK'
+    }
+    return render_template('response.json', response=json.dumps(resp))
 
