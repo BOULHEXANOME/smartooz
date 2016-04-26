@@ -86,6 +86,8 @@ def get_place(place_id):
     db = get_db()
     cur = db.execute('SELECT * FROM places WHERE id=?', [place_id])
     place = cur.fetchone()
+    if not place:
+        return None
     cur = db.execute(
         'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
         [place_id])
@@ -98,12 +100,18 @@ def get_circuit(circuit_id):
         return None
     db = get_db()
     cur = db.execute('SELECT * FROM circuit WHERE id=?', [circuit_id])
-    place = cur.fetchone()
+    circuit = cur.fetchone()
+    if not circuit:
+        return None
     cur = db.execute(
         'SELECT keywords.name FROM keywords,circuit_keywords WHERE keywords.id=circuit_keywords.id_keyword AND id_circuit=?',
         [circuit_id])
-    place['keywords'] = cur.fetchall()
-    return place
+    circuit['keywords'] = cur.fetchall()
+    cur = db.execute(
+        'SELECT id_place FROM circuit_places WHERE id_circuit=?',
+        [circuit_id])
+    circuit['places'] = cur.fetchall()
+    return circuit
 
 ##########################################################################################
 #                                   END USEFULL METHODS
@@ -184,7 +192,7 @@ def delete_place():
         resp['error'] = 'User not found sorry.'
         return render_template('response.json', response=json.dumps(resp))
     if not place:
-        resp['error'] = 'User not found sorry.'
+        resp['error'] = 'Place not found sorry.'
         return render_template('response.json', response=json.dumps(resp))
     if place['id_user'] != user['id']:
         resp['error'] = 'You are not allowed to access or modify this ressource.'
@@ -507,6 +515,9 @@ def add_circuit():
         if not request_json.get('keywords'):
             resp['error'] = 'No keywords given.'
             return render_template('response.json', response=json.dumps(resp))
+        if not request_json.get('places'):
+            resp['error'] = 'No places given.'
+            return render_template('response.json', response=json.dumps(resp))
 
         # TODO GMAPS
         calc_length = 3
@@ -536,8 +547,14 @@ def add_circuit():
             db.execute('INSERT INTO circuit_keywords (id_circuit, id_keyword) VALUES (?, ?)',
                        [circuit_inserted['id'], keyword['id']])
             db.commit()
+        for index, p in enumerate(request_json.get('places')):
+            cur = db.execute('SELECT * FROM places WHERE id=?', [p])
+            place = cur.fetchone()
+            if place:
+                db.execute('INSERT INTO circuit_places (id_circuit, id_place, number_in_list) VALUES (?,?,?)',
+                           [circuit_inserted['id'], p, index])
+                db.commit()
         resp['status'] = 'OK'
-
     except:
         resp['error'] = 'An error occured while inserting circuit.'
     return render_template('response.json', response=json.dumps(resp))
@@ -560,7 +577,7 @@ def update_circuit():
         resp['error'] = 'User not found sorry.'
         return render_template('response.json', response=json.dumps(resp))
     if not circuit:
-        resp['error'] = 'User not found sorry.'
+        resp['error'] = 'Circuit not found sorry.'
         return render_template('response.json', response=json.dumps(resp))
     if circuit['id_user'] != user['id']:
         resp['error'] = 'You are not allowed to access or modify this ressource.'
@@ -603,7 +620,7 @@ def update_circuit():
             db.commit()
 
         resp['status'] = 'OK'
-    except ValueError:
+    except:
         resp['error'] = 'An error occured while updating place.'
 
     return render_template('response.json', response=json.dumps(resp))

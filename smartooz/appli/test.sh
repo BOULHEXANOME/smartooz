@@ -66,7 +66,7 @@ curl "http://127.0.0.1:5000/get-place-id/1" --header "Content-Type:application/j
 echo
 echo
 echo "Add circuit.. Expect OK"
-curl -X POST -d '{"name":"mon circuit","description":"ma description","keywords":["keyWord-circuit", "2eKeyW"]}' http://127.0.0.1:5000/add-circuit --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+curl -X POST -d '{"name":"mon circuit","description":"ma description","keywords":["keyWord-circuit", "2eKeyW"],"places":[1,2]}' http://127.0.0.1:5000/add-circuit --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo
@@ -76,7 +76,7 @@ curl "http://127.0.0.1:5000/get-circuit-id/1" --header "Content-Type:application
 echo
 echo
 echo "Edit circuit.. Expect OK"
-curl -X POST -d '{"id":1, "name":"mon circuit","description":"ma 2","keywords":["keyWord-circuit", "2aaaa"]}' http://127.0.0.1:5000/update-circuit --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+curl -X POST -d '{"id":1, "name":"mon circuit","description":"ma 2","keywords":["keyWord-circuit", "2aaaa"],"places":[1]}' http://127.0.0.1:5000/update-circuit --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo
