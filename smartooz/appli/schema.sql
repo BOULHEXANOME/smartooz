@@ -40,6 +40,7 @@ DROP TABLE IF EXISTS circuit_places;
 CREATE TABLE circuit_places (
   id_circuit integer not null,
   id_place integer not null,
+  number_in_list integer not null,
   UNIQUE(id_place, id_circuit)
 );
 

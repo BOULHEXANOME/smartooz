@@ -1,7 +1,7 @@
 import os, json
 from sqlite3 import dbapi2 as sqlite3
 from flask import Flask, request, session, g, redirect, url_for, abort, \
-     render_template, flash, jsonify
+    render_template, flash, jsonify
 
 app = Flask(__name__)
 
@@ -24,7 +24,7 @@ def dict_factory(cursor, row):
 def connect_db():
     """Connects to the specific database."""
     rv = sqlite3.connect(app.config['DATABASE'])
-    rv.row_factory = dict_factory # sqlite3.Row
+    rv.row_factory = dict_factory
     return rv
 
 
@@ -58,12 +58,19 @@ def close_db(error):
     if hasattr(g, 'sqlite_db'):
         g.sqlite_db.close()
 
-###################################################################################################
+
+##########################################################################################
+
+
+##########################################################################################
+#                                   USEFULL METHODS
+##########################################################################################
 
 LATITUDE_MAX = 46
 LATITUDE_MIN = 45.6
-LONGITUDE_MAX = 4.7
-LONGITUDE_MIN = 5.0
+LONGITUDE_MAX = 5.0
+LONGITUDE_MIN = 4.7
+
 
 def get_user(user_id):
     if user_id is None:
@@ -79,14 +86,34 @@ def get_place(place_id):
     db = get_db()
     cur = db.execute('SELECT * FROM places WHERE id=?', [place_id])
     place = cur.fetchone()
-    cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?', [place_id])
+    cur = db.execute(
+        'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?',
+        [place_id])
     place['keywords'] = cur.fetchall()
     return place
 
 
+def get_circuit(circuit_id):
+    if circuit_id is None:
+        return None
+    db = get_db()
+    cur = db.execute('SELECT * FROM circuit WHERE id=?', [circuit_id])
+    place = cur.fetchone()
+    cur = db.execute(
+        'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?',
+        [circuit_id])
+    place['keywords'] = cur.fetchall()
+    return place
+
+##########################################################################################
+#                                   END USEFULL METHODS
+##########################################################################################
+#                                        PLACES
+##########################################################################################
+
+
 @app.route('/add-place', methods=['POST'])
 def add_place():
-    # curl -X POST -d '{"latitude":45.75,"longitude":4.8,"address":"ta mere","openning_hours":"tout le temps","name":"tour papine","description":"flemme","keywords":["sfm", "HOHO"]}' http://127.0.0.1:5000/add-place --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
     resp = {
         'status': 'KO'
     }
@@ -96,39 +123,43 @@ def add_place():
 
     request_json = request.get_json()
     try:
-        if float(request_json.get('latitude')) < LATITUDE_MIN or float(request_json.get('latitude')) > LATITUDE_MAX or float(request_json.get('longitude')) < LONGITUDE_MIN or float(request_json.get('longitude')) > LONGITUDE_MAX:
+        if float(request_json.get('latitude')) < LATITUDE_MIN or float(
+                request_json.get('latitude')) > LATITUDE_MAX or float(
+            request_json.get('longitude')) < LONGITUDE_MIN or float(request_json.get('longitude')) > LONGITUDE_MAX:
             resp['error'] = 'Latitude and longitude does not correspond to Lyon.'
-            return render_template('response.json', response=json.dumps(resp))    
+            return render_template('response.json', response=json.dumps(resp))
         if not request_json.get('keywords'):
             resp['error'] = 'No keywords given.'
             return render_template('response.json', response=json.dumps(resp))
 
         db = get_db()
-        db.execute('INSERT INTO places (lat, long, address, phone, website, openning_hours, name, description, id_user, note_5, nb_vote) values (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)',
-                   [float(request_json.get('latitude')), 
-                   float(request_json.get('longitude')), 
-                   request_json.get('address'), 
-                   request_json.get('phone'), 
-                   request_json.get('website'), 
-                   request_json.get('openning_hours'), 
-                   request_json.get('name'), 
-                   request_json.get('description'), 
-                   session.get('user_id')])
+        db.execute(
+            'INSERT INTO places (lat, long, address, phone, website, openning_hours, name, description, id_user, note_5, nb_vote) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)',
+            [float(request_json.get('latitude')),
+             float(request_json.get('longitude')),
+             request_json.get('address'),
+             request_json.get('phone'),
+             request_json.get('website'),
+             request_json.get('openning_hours'),
+             request_json.get('name'),
+             request_json.get('description'),
+             session.get('user_id')])
         db.commit()
-        cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?', [float(request_json.get('latitude')), float(request_json.get('longitude'))])
+        cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?',
+                         [float(request_json.get('latitude')), float(request_json.get('longitude'))])
         place_inserted = cur.fetchone()
         for k in request_json.get('keywords'):
             k = k.upper()
-            cur = db.execute('SELECT * FROM keywords where name=?', [k])
+            cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
             keyword = cur.fetchone()
             if not keyword:
-                db.execute('INSERT INTO keywords (name) values (?)', [k])
+                db.execute('INSERT INTO keywords (name) VALUES (?)', [k])
                 db.commit()
-                cur = db.execute('SELECT * FROM keywords where name=?', [k])
+                cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
                 keyword = cur.fetchone()
             # on peut inserer la relation place/keyword
-            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) values (?, ?)',
-                [place_inserted['id'], keyword['id']])
+            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) VALUES (?, ?)',
+                       [place_inserted['id'], keyword['id']])
             db.commit()
         resp['status'] = 'OK'
 
@@ -181,17 +212,19 @@ def get_places():
         cur = db.execute('SELECT * FROM places')
         list_places = cur.fetchall()
         for index, place in enumerate(list_places):
-            cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?', [place['id']])
+            cur = db.execute(
+                'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?',
+                [place['id']])
             list_places[index]['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
         resp['list_places'] = list_places
     except:
         resp['error'] = 'An error occured while getting places.'
     return render_template('response.json', response=json.dumps(resp))
-    
-    
+
+
 @app.route('/get-place-coord/<float:lat>,<float:longitude>', methods=['GET'])
-def get_place_coord(lat,longitude):
+def get_place_coord(lat, longitude):
     resp = {
         'status': 'KO'
     }
@@ -201,9 +234,11 @@ def get_place_coord(lat,longitude):
 
     try:
         db = get_db()
-        cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?', [lat,longitude])
+        cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?', [lat, longitude])
         place = cur.fetchone()
-        cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?', [place['id']])
+        cur = db.execute(
+            'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?',
+            [place['id']])
         place['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
         resp['place'] = place
@@ -227,7 +262,7 @@ def get_place_id(place_id):
     except:
         resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
-    
+
 
 @app.route('/get-places-keyword/', methods=['GET'])
 def get_places_keyword():
@@ -244,16 +279,20 @@ def get_places_keyword():
     try:
         places_final = []
         first = True
-        db=get_db()
+        db = get_db()
         for k in keywords:
-            list_places = db.execute('SELECT * FROM places WHERE id IN (SELECT id_place_or_circuit FROM place_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))', [k])
+            list_places = db.execute(
+                'SELECT * FROM places WHERE id IN (SELECT id_place_or_circuit FROM place_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))',
+                [k])
             places = list_places.fetchall()
             if first:
                 places_final = places
             else:
                 places_final = list(set(places).intersection(places_final))
         for index, place in enumerate(places_final):
-            cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?', [place['id']])
+            cur = db.execute(
+                'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?',
+                [place['id']])
             places_final[index]['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
         resp['places'] = places_final
@@ -284,44 +323,48 @@ def update_place():
     if place['id_user'] != user['id']:
         resp['error'] = 'You are not allowed to access or modify this ressource.'
         return render_template('response.json', response=json.dumps(resp))
-    
+
     try:
-        if float(request_json.get('latitude')) < LATITUDE_MIN or float(request_json.get('latitude')) > LATITUDE_MAX or float(request_json.get('longitude')) < LONGITUDE_MIN or float(request_json.get('longitude')) > LONGITUDE_MAX:
+        if float(request_json.get('latitude')) < LATITUDE_MIN or float(
+                request_json.get('latitude')) > LATITUDE_MAX or float(
+            request_json.get('longitude')) < LONGITUDE_MIN or float(request_json.get('longitude')) > LONGITUDE_MAX:
             resp['error'] = 'Latitude and longitude does not correspond to Lyon.'
-            return render_template('response.json', response=json.dumps(resp))    
+            return render_template('response.json', response=json.dumps(resp))
         if not request_json.get('keywords'):
             resp['error'] = 'No keywords given.'
-            return render_template('response.json', response=json.dumps(resp))   
+            return render_template('response.json', response=json.dumps(resp))
 
         db = get_db()
-        db.execute('UPDATE places SET lat=?, long=?, address=?, phone=?, website=?, openning_hours=?, name=?, description=? WHERE id=?',
-                   [float(request_json.get('latitude')), 
-                   float(request_json.get('longitude')), 
-                   request_json.get('address'), 
-                   request_json.get('phone'), 
-                   request_json.get('website'), 
-                   request_json.get('openning_hours'), 
-                   request_json.get('name'), 
-                   request_json.get('description'),
-                   place['id']])
+        db.execute(
+            'UPDATE places SET lat=?, long=?, address=?, phone=?, website=?, openning_hours=?, name=?, description=? WHERE id=?',
+            [float(request_json.get('latitude')),
+             float(request_json.get('longitude')),
+             request_json.get('address'),
+             request_json.get('phone'),
+             request_json.get('website'),
+             request_json.get('openning_hours'),
+             request_json.get('name'),
+             request_json.get('description'),
+             place['id']])
         db.commit()
         place = get_place(place_id)
         db.execute('DELETE FROM place_keywords WHERE id_place_or_circuit=?', [place['id']])
         db.commit()
         for k in request_json.get('keywords'):
             k = k.upper()
-            cur = db.execute('SELECT * FROM keywords where name=?', [k])
+            cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
             keyword = cur.fetchone()
             if not keyword:
                 db = get_db()
-                db.execute('INSERT INTO keywords (name) values (?)', [k])
+                db.execute('INSERT INTO keywords (name) VALUES (?)', [k])
                 db.commit()
-                cur = db.execute('SELECT * FROM keywords where name=?', [k])
+                cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
                 keyword = cur.fetchone()
             # on peut inserer la relation place/keyword
-            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) values (?, ?)', [place['id'], keyword['id']])
+            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) VALUES (?, ?)',
+                       [place['id'], keyword['id']])
             db.commit()
-        
+
         resp['status'] = 'OK'
     except:
         resp['error'] = 'An error occured while updating place.'
@@ -329,20 +372,26 @@ def update_place():
     return render_template('response.json', response=json.dumps(resp))
 
 
+##########################################################################################
+#                                     END PLACES
+##########################################################################################
+#                                       USERS
+##########################################################################################
+
+
 @app.route('/login', methods=['POST'])
 def login():
-    # curl -X POST -d '{"password":"hugo","username":"papin2"}' http://127.0.0.1:5000/login --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
     import hashlib
     request_json = request.get_json()
     password = hashlib.sha256(request_json.get('password', 'bla').encode('utf-8')).hexdigest()
     db = get_db()
-    cur = db.execute('select * from users where password=? and username=?',
-                        [password, request_json.get('username', 'bla')])
+    cur = db.execute('SELECT * FROM users WHERE password=? AND username=?',
+                     [password, request_json.get('username', 'bla')])
     user = cur.fetchone()
     resp = {
         'status': 'KO'
     }
-    if user != None:
+    if user is not None:
         session['user_id'] = user['id']
         resp['status'] = 'OK'
         resp['username'] = user['username']
@@ -365,16 +414,16 @@ def register():
         resp['error'] = 'You didn\'t fill all the fields.'
     else:
         db = get_db()
-        cur = db.execute('SELECT * FROM users where username=?', [username])
+        cur = db.execute('SELECT * FROM users WHERE username=?', [username])
         user = cur.fetchone()
-        if user == None:
-            db.execute('insert into USERS (email, password, username) values (?, ?, ?)',
-                            [email, password, username])
+        if user is None:
+            db.execute('INSERT INTO USERS (email, password, username) VALUES (?, ?, ?)',
+                       [email, password, username])
             db.commit()
-            cur = db.execute('select * from users where password=? and username=?',
-                        [password, request_json.get('username', 'bla')])
+            cur = db.execute('SELECT * FROM users WHERE password=? AND username=?',
+                             [password, request_json.get('username', 'bla')])
             user = cur.fetchone()
-            if user != None:
+            if user is not None:
                 session['user_id'] = user['id']
                 resp['status'] = 'OK'
                 resp['username'] = user['username']
@@ -383,7 +432,7 @@ def register():
             resp['error'] = 'Sorry, username already exists.'
     return render_template('response.json', response=json.dumps(resp))
 
-    
+
 @app.route('/delete-user', methods=['POST'])
 def delete_user():
     resp = {
@@ -396,7 +445,7 @@ def delete_user():
     user = get_user(session['user_id'])
     if not user:
         resp['error'] = 'User not found sorry.'
-        return render_template('response.json', response=json.dumps(resp))    
+        return render_template('response.json', response=json.dumps(resp))
     db = get_db()
     db.execute('DELETE FROM users WHERE id=?', [user['id']])
     db.commit()
@@ -413,3 +462,130 @@ def logout():
     }
     return render_template('response.json', response=json.dumps(resp))
 
+
+##########################################################################################
+#                                     END USER
+##########################################################################################
+#                                     CIRCUITS
+##########################################################################################
+
+
+@app.route('/add-circuit', methods=['POST'])
+def add_circuit():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    request_json = request.get_json()
+    try:
+        if not request_json.get('keywords'):
+            resp['error'] = 'No keywords given.'
+            return render_template('response.json', response=json.dumps(resp))
+
+        # TODO GMAPS
+        calc_length = 3
+        calc_height = 20
+
+        db = get_db()
+        db.execute(
+            'INSERT INTO circuit (name, description, length_km, height_difference_m, note_5, id_user) VALUES (?, ?, ?, ?, 0, ?)',
+            [request_json.get('name'),
+             request_json.get('description'),
+             calc_length,
+             calc_height,
+             session.get('user_id')])
+        db.commit()
+        cur = db.execute('SELECT * FROM circuit WHERE id=last_insert_rowid()')
+        circuit_inserted = cur.fetchone()
+        for k in request_json.get('keywords'):
+            k = k.upper()
+            cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
+            keyword = cur.fetchone()
+            if not keyword:
+                db.execute('INSERT INTO keywords (name) VALUES (?)', [k])
+                db.commit()
+                cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
+                keyword = cur.fetchone()
+            # on peut inserer la relation place/keyword
+            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) VALUES (?, ?)',
+                       [circuit_inserted['id'], keyword['id']])
+            db.commit()
+        resp['status'] = 'OK'
+
+    except:
+        resp['error'] = 'An error occured while inserting circuit.'
+    return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/update-circuit', methods=['POST'])
+def update_circuit():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    request_json = request.get_json()
+    circuit_id = request_json.get('id', '-1')
+    user = get_user(session['user_id'])
+    circuit = get_circuit(circuit_id)
+    if not user:
+        resp['error'] = 'User not found sorry.'
+        return render_template('response.json', response=json.dumps(resp))
+    if not circuit:
+        resp['error'] = 'User not found sorry.'
+        return render_template('response.json', response=json.dumps(resp))
+    if circuit['id_user'] != user['id']:
+        resp['error'] = 'You are not allowed to access or modify this ressource.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    try:
+        if not request_json.get('keywords'):
+            resp['error'] = 'No keywords given.'
+            return render_template('response.json', response=json.dumps(resp))
+
+        # TODO GMAPS
+        calc_length = 3
+        calc_height = 20
+
+        db = get_db()
+        db.execute(
+            'UPDATE circuit SET name=?, description=?, length_km=?, height_difference_m=? WHERE id=?',
+            [request_json.get('name'),
+             request_json.get('description'),
+             calc_length,
+             calc_height,
+             circuit_id])
+        db.commit()
+        circuit = get_place(circuit_id)
+        db.execute('DELETE FROM place_keywords WHERE id_place_or_circuit=?', [circuit['id']])
+        db.commit()
+        for k in request_json.get('keywords'):
+            k = k.upper()
+            cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
+            keyword = cur.fetchone()
+            if not keyword:
+                db = get_db()
+                db.execute('INSERT INTO keywords (name) VALUES (?)', [k])
+                db.commit()
+                cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
+                keyword = cur.fetchone()
+            # on peut inserer la relation place/keyword
+            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) VALUES (?, ?)',
+                       [circuit['id'], keyword['id']])
+            db.commit()
+
+        resp['status'] = 'OK'
+    except ValueError:
+        resp['error'] = 'An error occured while updating place.'
+
+    return render_template('response.json', response=json.dumps(resp))
+
+
+##########################################################################################
+#                                     END CIRCUITS
+##########################################################################################

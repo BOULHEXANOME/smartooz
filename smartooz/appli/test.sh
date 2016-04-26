@@ -1,9 +1,5 @@
 flask --app=smartooz initdb
 
-flask --app=smartooz run & 
-
-sleep 2
-
 echo "Register.. Expect OK"
 curl -X POST -d '{"password":"hugo","username":"papin2","email":"balec"}' http://127.0.0.1:5000/register --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
@@ -64,6 +60,16 @@ curl "http://127.0.0.1:5000/get-place-id/1" --header "Content-Type:application/j
 
 echo
 echo
+echo "Add circuit.. Expect OK"
+curl -X POST -d '{"name":"mon circuit","description":"ma description","keywords":["keyWord-circuit", "2eKeyW"]}' http://127.0.0.1:5000/add-circuit --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
+echo "Edit circuit.. Expect OK"
+curl -X POST -d '{"id":1, "name":"mon circuit","description":"ma 2","keywords":["keyWord-circuit", "2aaaa"]}' http://127.0.0.1:5000/update-circuit --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
 echo "Logout.. Expect OK -> updated"
 curl http://127.0.0.1:5000/logout --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
@@ -86,7 +92,3 @@ echo
 echo
 echo "Login.. Expect err"
 curl -X POST -d '{"password":"hugo","username":"papin2"}' http://127.0.0.1:5000/login --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
-
-echo
-echo
-ps aux | grep python
