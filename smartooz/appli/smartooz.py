@@ -14,10 +14,17 @@ app.config.update(dict(
 app.config.from_envvar('FLASKR_SETTINGS', silent=True)
 
 
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+
 def connect_db():
     """Connects to the specific database."""
     rv = sqlite3.connect(app.config['DATABASE'])
-    rv.row_factory = sqlite3.Row
+    rv.row_factory = dict_factory # sqlite3.Row
     return rv
 
 
@@ -53,30 +60,13 @@ def close_db(error):
 
 ###################################################################################################
 
-def fetchone_custom(cur):
-    list_sqlite = cur.fetchone()
-    list_ret = []
-    for item in list_sqlite:
-        list_ret.append(item)
-    return list_ret
-
-
-def fetchall_custom(cur):
-    list_sqlite = cur.fetchall()
-    list_ret = []
-    for item in list_sqlite:
-        item_custom = []
-        for i in item:
-            item_custom.append(i)
-        list_ret.append(item_custom)
-    return list_ret
 
 def get_user(user_id):
     if user_id is None:
         return None
     db = get_db()
     cur = db.execute('SELECT * FROM users WHERE id=?', [user_id])
-    return fetchone_custom(cur)
+    return cur.fetchone()
 
 
 def get_place(place_id):
@@ -84,8 +74,10 @@ def get_place(place_id):
         return None
     db = get_db()
     cur = db.execute('SELECT * FROM places WHERE id=?', [place_id])
-    ret = fetchone_custom(cur)
-    return ret
+    place = cur.fetchone()
+    cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?', [place_id])
+    place['keywords'] = cur.fetchall()
+    return place
 
 
 @app.route('/add-place', methods=['POST'])
@@ -101,8 +93,8 @@ def add_place():
     request_json = request.get_json()
     try:
         if float(request_json.get('latitude')) < 45.7 or float(request_json.get('latitude')) > 45.8 or float(request_json.get('longitude'))<4.7 or float(request_json.get('longitude'))>5.0:
-            resp['error'] = 'Note between 0 and 5.'
-            return render_template('response.json', response=json.dumps(resp))
+            resp['error'] = 'Latitude and longitude does not correspond to Lyon.'
+            return render_template('response.json', response=json.dumps(resp))    
         if not request_json.get('keywords'):
             resp['error'] = 'No keywords given.'
             return render_template('response.json', response=json.dumps(resp))
@@ -131,7 +123,8 @@ def add_place():
                 cur = db.execute('SELECT * FROM keywords where name=?', [k])
                 keyword = cur.fetchone()
             # on peut inserer la relation place/keyword
-            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) values (?, ?)', [place_inserted['id'], keyword['id']])
+            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) values (?, ?)',
+                [place_inserted['id'], keyword['id']])
             db.commit()
         resp['status'] = 'OK'
 
@@ -182,7 +175,10 @@ def get_places():
     try:
         db = get_db()
         cur = db.execute('SELECT * FROM places')
-        list_places = fetchall_custom(cur)
+        list_places = cur.fetchall()
+        for index, place in enumerate(list_places):
+            cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?', [place['id']])
+            list_places[index]['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
         resp['list_places'] = list_places
     except:
@@ -202,7 +198,9 @@ def get_place_coord(lat,longitude):
     try:
         db = get_db()
         cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?', [lat,longitude])
-        place = fetchone_custom(cur)
+        place = cur.fetchone()
+        cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?', [place['id']])
+        place['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
         resp['place'] = place
     except:
@@ -228,8 +226,8 @@ def get_place_id(place_id):
     return render_template('response.json', response=json.dumps(resp))
 
 
-@app.route('/update-place/<int:place_id>', methods=['POST'])
-def update_place(place_id):
+@app.route('/update-place', methods=['POST'])
+def update_place():
     resp = {
         'status': 'KO'
     }
@@ -237,6 +235,8 @@ def update_place(place_id):
         resp['error'] = 'Please login or register to access our services.'
         return render_template('response.json', response=json.dumps(resp))
 
+    request_json = request.get_json()
+    place_id = request_json.get('id', '-1')
     user = get_user(session['user_id'])
     place = get_place(place_id)
     if not user:
@@ -250,11 +250,8 @@ def update_place(place_id):
         return render_template('response.json', response=json.dumps(resp))
     
     try:
-        if float(request_json.get('note', '0')) < 0 or float(request_json.get('note', '0')) > 5:
-            resp['error'] = 'Note between 0 and 5.'
-            return render_template('response.json', response=json.dumps(resp))
         if float(request_json.get('latitude')) < 45.7 or float(request_json.get('latitude')) > 45.8 or float(request_json.get('longitude'))<4.7 or float(request_json.get('longitude'))>5.0:
-            resp['error'] = 'Note between 0 and 5.'
+            resp['error'] = 'Latitude and longitude does not correspond to Lyon.'
             return render_template('response.json', response=json.dumps(resp))    
         if not request_json.get('keywords'):
             resp['error'] = 'No keywords given.'
@@ -270,7 +267,7 @@ def update_place(place_id):
                    request_json.get('openning_hours'), 
                    request_json.get('name'), 
                    request_json.get('description'),
-                   user['id']])
+                   place['id']])
         db.commit()
         place = get_place(place_id)
         db.execute('DELETE FROM place_keywords WHERE id_place_or_circuit=?', [place['id']])
@@ -286,12 +283,12 @@ def update_place(place_id):
                 cur = db.execute('SELECT * FROM keywords where name=?', [k])
                 keyword = cur.fetchone()
             # on peut inserer la relation place/keyword
-            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) values (?, ?)', [place_inserted['id'], keyword['id']])
+            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) values (?, ?)', [place['id'], keyword['id']])
             db.commit()
         
         resp['status'] = 'OK'
     except:
-        resp['error'] = 'An error occured while inserting place.'
+        resp['error'] = 'An error occured while updating place.'
 
     return render_template('response.json', response=json.dumps(resp))
 
