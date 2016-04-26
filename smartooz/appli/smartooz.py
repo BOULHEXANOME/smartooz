@@ -207,6 +207,28 @@ def get_place_id(place_id):
     except:
         resp['error'] = 'An error occured while inserting place.'
     return render_template('response.json', response=json.dumps(resp))
+    
+
+@app.route('/get-places-keyword/<int:keyword_id>', methods=['GET'])
+def get_places_keyword(keyword_id):
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    try:
+        db=get_db()
+        list_places = db.execute(('SELECT * FROM places WHERE id IN (SELECT id_place_or_circuit FROM place_keywords WHERE id_keyword=?))', [keyword_id])
+        
+        places = fetchall_custom(list_places)
+        resp['status'] = 'OK'
+        resp['places'] = places
+    except:
+        resp['error'] = 'An error occured while inserting place.'
+    return render_template('response.json', response=json.dumps(resp))
+    
 
 @app.route('/update-place/<int:place_id>', methods=['POST'])
 def update_place(place_id):
@@ -329,6 +351,29 @@ def register():
         else:
             resp['error'] = 'Sorry, username already exists.'
     return render_template('response.json', response=json.dumps(resp))
+
+    
+@app.route('/delete_user', methods=['POST'])
+def delete_user(user_id):
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    request_json = request.get_json()
+    user = get_user(session['user_id'])
+    user_to_delete = get_user(request_json.get('user_id', '-1'))
+    if not user:
+        resp['error'] = 'User not found sorry.'
+        return render_template('response.json', response=json.dumps(resp))
+    else:
+        db = get_db()
+        db.execute('DELETE FROM users WHERE id=?', [user['id']])
+        db.commit()
+        resp['status'] = 'OK'
+        return render_template('response.json', response=json.dumps(resp))
 
 
 @app.route('/logout')
