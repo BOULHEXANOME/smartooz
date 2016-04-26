@@ -1,7 +1,7 @@
 import os, json
 from sqlite3 import dbapi2 as sqlite3
 from flask import Flask, request, session, g, redirect, url_for, abort, \
-     render_template, flash
+     render_template, flash, jsonify
 
 app = Flask(__name__)
 
@@ -53,19 +53,39 @@ def close_db(error):
 
 ###################################################################################################
 
+def fetchone_custom(cur):
+    list_sqlite = cur.fetchone()
+    list_ret = []
+    for item in list_sqlite:
+        list_ret.append(item)
+    return list_ret
+
+
+def fetchall_custom(cur):
+    list_sqlite = cur.fetchall()
+    list_ret = []
+    for item in list_sqlite:
+        item_custom = []
+        for i in item:
+            item_custom.append(i)
+        list_ret.append(item_custom)
+    return list_ret
+
 def get_user(user_id):
     if user_id is None:
         return None
     db = get_db()
     cur = db.execute('SELECT * FROM users WHERE id=?', [user_id])
-    return cur.fetchone()
+    return fetchone_custom(cur)
+
 
 def get_place(place_id):
     if place_id is None:
         return None
     db = get_db()
     cur = db.execute('SELECT * FROM places WHERE id=?', [place_id])
-    return cur.fetchone()
+    ret = fetchone_custom(cur)
+    return ret
 
 
 @app.route('/add-place', methods=['POST'])
@@ -159,10 +179,10 @@ def get_places():
         resp['error'] = 'Please login or register to access our services.'
         return render_template('response.json', response=json.dumps(resp))
 
-    request_json = request.get_json()
     try:
+        db = get_db()
         cur = db.execute('SELECT * FROM places')
-        list_places = cur.fetchall()
+        list_places = fetchall_custom(cur)
         resp['status'] = 'OK'
         resp['list_places'] = list_places
     except:
@@ -179,10 +199,10 @@ def get_place_coord(lat,longitude):
         resp['error'] = 'Please login or register to access our services.'
         return render_template('response.json', response=json.dumps(resp))
 
-    request_json = request.get_json()
     try:
+        db = get_db()
         cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?', [lat,longitude])
-        place = cur.fetchone()
+        place = fetchone_custom(cur)
         resp['status'] = 'OK'
         resp['place'] = place
     except:
@@ -199,14 +219,14 @@ def get_place_id(place_id):
         resp['error'] = 'Please login or register to access our services.'
         return render_template('response.json', response=json.dumps(resp))
 
-    request_json = request.get_json()
     try:
         place = get_place(place_id)
         resp['status'] = 'OK'
         resp['place'] = place
     except:
-        resp['error'] = 'An error occured while inserting place.'
+        resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
+
 
 @app.route('/update-place/<int:place_id>', methods=['POST'])
 def update_place(place_id):
