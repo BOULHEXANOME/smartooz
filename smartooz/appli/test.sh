@@ -44,6 +44,11 @@ curl "http://127.0.0.1:5000/get-place-id/1" --header "Content-Type:application/j
 
 echo
 echo
+echo "GET place1 by coord.. (lat 45.75, long 4.8, radius 1) Expect OK"
+curl "http://127.0.0.1:5000/get-place-id/1" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
 echo "Logout.. Expect OK"
 curl http://127.0.0.1:5000/logout --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 

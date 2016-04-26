@@ -208,6 +208,25 @@ def get_place_coord(lat,longitude):
     except:
         resp['error'] = 'An error occured while inserting place.'
     return render_template('response.json', response=json.dumps(resp))
+    
+@app.route('/get-place-radius-coord/<float:lat>,<float:longitude>,<int:radius>', methods=['GET'])
+def get_place_radius_coord(lat,longitude,radius):
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    try:
+        db = get_db()
+        cur = db.execute('SELECT * FROM places WHERE lat>? AND lat<? AND long>? AND long<?', [lat-(radius*0.009043),lat+(radius*0.009043),longitude-(radius*0.0131043),longitude+(radius*0.0131043)])
+        place = fetchone_custom(cur)
+        resp['status'] = 'OK'
+        resp['place'] = place
+    except:
+        resp['error'] = 'An error occured while inserting place.'
+    return render_template('response.json', response=json.dumps(resp))
 
 
 @app.route('/get-place-id/<int:place_id>', methods=['GET'])
