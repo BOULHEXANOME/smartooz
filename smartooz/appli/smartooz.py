@@ -149,6 +149,66 @@ def delete_place():
     resp['status'] = 'OK'
     return render_template('response.json', response=json.dumps(resp))
 
+    
+    
+@app.route('/get-places', methods=['GET'])
+def get_places():
+    resp = {
+        'status': 'KO'
+    }
+    import json
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+    else:
+        request_json = request.get_json()
+        try:
+            cur = db.execute('SELECT * FROM places')
+            list_places = cur.fetchall()
+            resp['status'] = 'OK'
+            resp['list_places'] = list_places
+        except:
+            resp['error'] = 'An error occured while inserting place.'
+    return render_template('response.json', response=json.dumps(resp))
+    
+    
+@app.route('/get-place-coord/<float:lat><float:long>', methods=['GET'])
+def get_place_coord(lat,long):
+    resp = {
+        'status': 'KO'
+    }
+    import json
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+    else:
+        request_json = request.get_json()
+        try:
+            cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?', [lat,long])
+            place = cur.fetchone()
+            resp['status'] = 'OK'
+            resp['place'] = place
+        except:
+            resp['error'] = 'An error occured while inserting place.'
+    return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/get-place-id/<int:place_id>', methods=['GET'])
+def get_place_id(place_id):
+    resp = {
+        'status': 'KO'
+    }
+    import json
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+    else:
+        request_json = request.get_json()
+        try:
+            cur = db.execute('SELECT * FROM places WHERE id=?', [article_id])
+            place = cur.fetchone()
+            resp['status'] = 'OK'
+            resp['place'] = place
+        except:
+            resp['error'] = 'An error occured while inserting place.'
+    return render_template('response.json', response=json.dumps(resp))
 
 @app.route('/update-place/<int:place_id>', methods=['POST'])
 def update_place(place_id):
