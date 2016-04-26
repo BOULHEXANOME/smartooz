@@ -46,7 +46,12 @@ curl "http://127.0.0.1:5000/get-place-id/1" --header "Content-Type:application/j
 echo
 echo
 echo "GET place1 by lat/long.. Expect OK"
-curl "http://127.0.0.1:5000/get-place-coord/45.76,4.8" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+curl "http://127.0.0.1:5000/get-place-coord/45.75,4.8" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
+echo "GET place1 by coord radius.. (lat 45.75, long 4.8, radius 5) Expect OK"
+curl "http://127.0.0.1:5000/get-place-radius-coord/45.75,4.8,5" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo
@@ -70,8 +75,9 @@ curl -X POST -d '{"id":1, "name":"mon circuit","description":"ma 2","keywords":[
 
 echo
 echo
+echo "Logout.. Expect OK"
 echo "Logout.. Expect OK -> updated"
-curl http://127.0.0.1:5000/logout --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+curl "http://127.0.0.1:5000/logout" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo
@@ -92,3 +98,5 @@ echo
 echo
 echo "Login.. Expect err"
 curl -X POST -d '{"password":"hugo","username":"papin2"}' http://127.0.0.1:5000/login --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
