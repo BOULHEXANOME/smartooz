@@ -9,7 +9,7 @@ CREATE TABLE users (
 DROP TABLE IF EXISTS keywords;
 CREATE TABLE keywords (
   id integer primary key autoincrement,
-  name text not null
+  name text unique not null
 );
 
 DROP TABLE IF EXISTS place_keywords;
@@ -32,6 +32,7 @@ CREATE TABLE places (
   description text not null,
   id_user integer not null,
   note_5 float not null,
+  nb_vote integer not null,
   UNIQUE(lat, long)
 );
 
@@ -59,6 +60,3 @@ DELETE FROM place_keywords;
 DELETE FROM keywords;
 DELETE FROM circuit;
 DELETE FROM circuit_places;
-
-insert into users (email, password, username) values ('hugoss1@hotmail.fr', 'hugo', 'hugo');
-insert into users (email, password, username) values ('hugo@hotmail.fr', 'hugo2', 'hugo2');
