@@ -60,6 +60,10 @@ def close_db(error):
 
 ###################################################################################################
 
+LATITUDE_MAX = 46
+LATITUDE_MIN = 45.6
+LONGITUDE_MAX = 4.7
+LONGITUDE_MIN = 5.0
 
 def get_user(user_id):
     if user_id is None:
@@ -92,7 +96,7 @@ def add_place():
 
     request_json = request.get_json()
     try:
-        if float(request_json.get('latitude')) < 45.7 or float(request_json.get('latitude')) > 45.8 or float(request_json.get('longitude'))<4.7 or float(request_json.get('longitude'))>5.0:
+        if float(request_json.get('latitude')) < LATITUDE_MIN or float(request_json.get('latitude')) > LATITUDE_MAX or float(request_json.get('longitude')) < LONGITUDE_MIN or float(request_json.get('longitude')) > LONGITUDE_MAX:
             resp['error'] = 'Latitude and longitude does not correspond to Lyon.'
             return render_template('response.json', response=json.dumps(resp))    
         if not request_json.get('keywords'):
@@ -282,7 +286,7 @@ def update_place():
         return render_template('response.json', response=json.dumps(resp))
     
     try:
-        if float(request_json.get('latitude')) < 45.7 or float(request_json.get('latitude')) > 45.8 or float(request_json.get('longitude'))<4.7 or float(request_json.get('longitude'))>5.0:
+        if float(request_json.get('latitude')) < LATITUDE_MIN or float(request_json.get('latitude')) > LATITUDE_MAX or float(request_json.get('longitude')) < LONGITUDE_MIN or float(request_json.get('longitude')) > LONGITUDE_MAX:
             resp['error'] = 'Latitude and longitude does not correspond to Lyon.'
             return render_template('response.json', response=json.dumps(resp))    
         if not request_json.get('keywords'):
