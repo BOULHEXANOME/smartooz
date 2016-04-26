@@ -182,7 +182,7 @@ def get_places():
         resp['status'] = 'OK'
         resp['list_places'] = list_places
     except:
-        resp['error'] = 'An error occured while inserting place.'
+        resp['error'] = 'An error occured while getting places.'
     return render_template('response.json', response=json.dumps(resp))
     
     
@@ -204,7 +204,7 @@ def get_place_coord(lat,longitude):
         resp['status'] = 'OK'
         resp['place'] = place
     except:
-        resp['error'] = 'An error occured while inserting place.'
+        resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
 
 
@@ -216,7 +216,6 @@ def get_place_id(place_id):
     if not session.get('user_id'):
         resp['error'] = 'Please login or register to access our services.'
         return render_template('response.json', response=json.dumps(resp))
-
     try:
         place = get_place(place_id)
         resp['status'] = 'OK'
@@ -226,8 +225,8 @@ def get_place_id(place_id):
     return render_template('response.json', response=json.dumps(resp))
     
 
-@app.route('/get-places-keyword/<int:keyword_id>', methods=['GET'])
-def get_places_keyword(keyword_id):
+@app.route('/get-places-keyword/', methods=['GET'])
+def get_places_keyword():
     resp = {
         'status': 'KO'
     }
@@ -235,17 +234,28 @@ def get_places_keyword(keyword_id):
         resp['error'] = 'Please login or register to access our services.'
         return render_template('response.json', response=json.dumps(resp))
 
+    keywords = request.args.getlist('keywords')
+    for i, keyword in enumerate(keywords):
+        keywords[i] = keyword.upper()
     try:
+        places_final = []
+        first = True
         db=get_db()
-        list_places = db.execute(('SELECT * FROM places WHERE id IN (SELECT id_place_or_circuit FROM place_keywords WHERE id_keyword=?))', [keyword_id])
-        
-        places = fetchall_custom(list_places)
+        for k in keywords:
+            list_places = db.execute('SELECT * FROM places WHERE id IN (SELECT id_place_or_circuit FROM place_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))', [k])
+            places = list_places.fetchall()
+            if first:
+                places_final = places
+            else:
+                places_final = list(set(places).intersection(places_final))
+        for index, place in enumerate(places_final):
+            cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?', [place['id']])
+            places_final[index]['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
-        resp['places'] = places
+        resp['places'] = places_final
     except:
-        resp['error'] = 'An error occured while inserting place.'
+        resp['error'] = 'An error occured while getting places.'
     return render_template('response.json', response=json.dumps(resp))
-    
 
 
 @app.route('/update-place', methods=['POST'])
@@ -370,8 +380,8 @@ def register():
     return render_template('response.json', response=json.dumps(resp))
 
     
-@app.route('/delete_user', methods=['POST'])
-def delete_user(user_id):
+@app.route('/delete-user', methods=['POST'])
+def delete_user():
     resp = {
         'status': 'KO'
     }
@@ -379,18 +389,16 @@ def delete_user(user_id):
         resp['error'] = 'Please login or register to access our services.'
         return render_template('response.json', response=json.dumps(resp))
 
-    request_json = request.get_json()
     user = get_user(session['user_id'])
-    user_to_delete = get_user(request_json.get('user_id', '-1'))
     if not user:
         resp['error'] = 'User not found sorry.'
-        return render_template('response.json', response=json.dumps(resp))
-    else:
-        db = get_db()
-        db.execute('DELETE FROM users WHERE id=?', [user['id']])
-        db.commit()
-        resp['status'] = 'OK'
-        return render_template('response.json', response=json.dumps(resp))
+        return render_template('response.json', response=json.dumps(resp))    
+    db = get_db()
+    db.execute('DELETE FROM users WHERE id=?', [user['id']])
+    db.commit()
+    session.pop('user_id', None)
+    resp['status'] = 'OK'
+    return render_template('response.json', response=json.dumps(resp))
 
 
 @app.route('/logout')

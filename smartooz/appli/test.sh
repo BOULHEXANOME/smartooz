@@ -39,6 +39,11 @@ curl http://127.0.0.1:5000/get-places --header "Content-Type:application/json" -
 
 echo
 echo
+echo "GET places by keywords.. Expect OK"
+curl "http://127.0.0.1:5000/get-places-keyword/?keywords=sfm&keywords=c%20est%20g%C3%A9nial" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
 echo "GET place1 by id.. (lat 45.75) Expect OK"
 curl "http://127.0.0.1:5000/get-place-id/1" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
@@ -66,6 +71,21 @@ echo
 echo
 echo "Add place.. Expect err"
 curl -X POST -d '{"latitude":45.77,"longitude":4.81,"address":"ta 2","openning_hours":"tout le temps","name":"tour sdk","description":"flemme","keywords":["sfm", "c est génial"]}' http://127.0.0.1:5000/add-place --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
+echo "Login.. Expect OK"
+curl -X POST -d '{"password":"hugo","username":"papin2"}' http://127.0.0.1:5000/login --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
+echo "Delete user.. Expect OK"
+curl -X POST http://127.0.0.1:5000/delete-user --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
+echo "Login.. Expect err"
+curl -X POST -d '{"password":"hugo","username":"papin2"}' http://127.0.0.1:5000/login --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo
