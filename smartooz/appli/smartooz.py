@@ -207,6 +207,7 @@ def get_place_coord(lat,longitude):
         resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
     
+    
 @app.route('/get-place-radius-coord/<float:lat>,<float:longitude>,<int:radius>', methods=['GET'])
 def get_place_radius_coord(lat,longitude,radius):
     resp = {
@@ -218,12 +219,15 @@ def get_place_radius_coord(lat,longitude,radius):
 
     try:
         db = get_db()
-        cur = db.execute('SELECT * FROM places WHERE lat>? AND lat<? AND long>? AND long<?', [lat-(radius*0.009043),lat+(radius*0.009043),longitude-(radius*0.0131043),longitude+(radius*0.0131043)])
-        place = fetchone_custom(cur)
+        cur = db.execute('SELECT * FROM places WHERE (lat>? AND lat<? AND long>? AND long<?)', [lat-(radius*0.009043),lat+(radius*0.009043),longitude-(radius*0.0131043),longitude+(radius*0.0131043)])
+        
+        place = cur.fetchone()
+        cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?', [place['id']])
+        place['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
         resp['place'] = place
     except:
-        resp['error'] = 'An error occured while inserting place.'
+        resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
 
 
