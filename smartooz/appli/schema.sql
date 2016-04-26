@@ -14,9 +14,16 @@ CREATE TABLE keywords (
 
 DROP TABLE IF EXISTS place_keywords;
 CREATE TABLE place_keywords (
-  id_place_or_circuit integer not null,
+  id_place integer not null,
   id_keyword integer not null,
-  UNIQUE(id_place_or_circuit, id_keyword)
+  UNIQUE(id_place, id_keyword)
+);
+
+DROP TABLE IF EXISTS circuit_keywords;
+CREATE TABLE circuit_keywords (
+  id_circuit integer not null,
+  id_keyword integer not null,
+  UNIQUE(id_circuit, id_keyword)
 );
 
 DROP TABLE IF EXISTS places;

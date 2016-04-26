@@ -87,7 +87,7 @@ def get_place(place_id):
     cur = db.execute('SELECT * FROM places WHERE id=?', [place_id])
     place = cur.fetchone()
     cur = db.execute(
-        'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?',
+        'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
         [place_id])
     place['keywords'] = cur.fetchall()
     return place
@@ -100,7 +100,7 @@ def get_circuit(circuit_id):
     cur = db.execute('SELECT * FROM circuit WHERE id=?', [circuit_id])
     place = cur.fetchone()
     cur = db.execute(
-        'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?',
+        'SELECT keywords.name FROM keywords,circuit_keywords WHERE keywords.id=circuit_keywords.id_keyword AND id_circuit=?',
         [circuit_id])
     place['keywords'] = cur.fetchall()
     return place
@@ -158,7 +158,7 @@ def add_place():
                 cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
                 keyword = cur.fetchone()
             # on peut inserer la relation place/keyword
-            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) VALUES (?, ?)',
+            db.execute('INSERT INTO place_keywords (id_place, id_keyword) VALUES (?, ?)',
                        [place_inserted['id'], keyword['id']])
             db.commit()
         resp['status'] = 'OK'
@@ -192,7 +192,7 @@ def delete_place():
 
     db = get_db()
     db.execute('DELETE FROM places WHERE id=?', [place['id']])
-    db.execute('DELETE FROM place_keywords WHERE id_place_or_circuit=?', [place['id']])
+    db.execute('DELETE FROM place_keywords WHERE id_place=?', [place['id']])
     db.commit()
     resp['status'] = 'OK'
     return render_template('response.json', response=json.dumps(resp))
@@ -213,7 +213,7 @@ def get_places():
         list_places = cur.fetchall()
         for index, place in enumerate(list_places):
             cur = db.execute(
-                'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?',
+                'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
                 [place['id']])
             list_places[index]['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
@@ -237,7 +237,7 @@ def get_place_coord(lat, longitude):
         cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?', [lat, longitude])
         place = cur.fetchone()
         cur = db.execute(
-            'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?',
+            'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
             [place['id']])
         place['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
@@ -261,7 +261,7 @@ def get_place_radius_coord(lat,longitude,radius):
         cur = db.execute('SELECT * FROM places WHERE (lat>? AND lat<? AND long>? AND long<?)', [lat-(radius*0.009043),lat+(radius*0.009043),longitude-(radius*0.0131043),longitude+(radius*0.0131043)])
         
         place = cur.fetchone()
-        cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?', [place['id']])
+        cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?', [place['id']])
         place['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
         resp['place'] = place
@@ -305,7 +305,7 @@ def get_places_keyword():
         db = get_db()
         for k in keywords:
             list_places = db.execute(
-                'SELECT * FROM places WHERE id IN (SELECT id_place_or_circuit FROM place_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))',
+                'SELECT * FROM places WHERE id IN (SELECT id_place FROM place_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))',
                 [k])
             places = list_places.fetchall()
             if first:
@@ -314,7 +314,7 @@ def get_places_keyword():
                 places_final = list(set(places).intersection(places_final))
         for index, place in enumerate(places_final):
             cur = db.execute(
-                'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place_or_circuit=?',
+                'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
                 [place['id']])
             places_final[index]['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
@@ -371,7 +371,7 @@ def update_place():
              place['id']])
         db.commit()
         place = get_place(place_id)
-        db.execute('DELETE FROM place_keywords WHERE id_place_or_circuit=?', [place['id']])
+        db.execute('DELETE FROM place_keywords WHERE id_place=?', [place['id']])
         db.commit()
         for k in request_json.get('keywords'):
             k = k.upper()
@@ -384,7 +384,7 @@ def update_place():
                 cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
                 keyword = cur.fetchone()
             # on peut inserer la relation place/keyword
-            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) VALUES (?, ?)',
+            db.execute('INSERT INTO place_keywords (id_place, id_keyword) VALUES (?, ?)',
                        [place['id'], keyword['id']])
             db.commit()
 
@@ -533,7 +533,7 @@ def add_circuit():
                 cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
                 keyword = cur.fetchone()
             # on peut inserer la relation place/keyword
-            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) VALUES (?, ?)',
+            db.execute('INSERT INTO circuit_keywords (id_circuit, id_keyword) VALUES (?, ?)',
                        [circuit_inserted['id'], keyword['id']])
             db.commit()
         resp['status'] = 'OK'
@@ -585,7 +585,7 @@ def update_circuit():
              circuit_id])
         db.commit()
         circuit = get_place(circuit_id)
-        db.execute('DELETE FROM place_keywords WHERE id_place_or_circuit=?', [circuit['id']])
+        db.execute('DELETE FROM circuit_keywords WHERE id_circuit=?', [circuit['id']])
         db.commit()
         for k in request_json.get('keywords'):
             k = k.upper()
@@ -598,7 +598,7 @@ def update_circuit():
                 cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
                 keyword = cur.fetchone()
             # on peut inserer la relation place/keyword
-            db.execute('INSERT INTO place_keywords (id_place_or_circuit, id_keyword) VALUES (?, ?)',
+            db.execute('INSERT INTO circuit_keywords (id_circuit, id_keyword) VALUES (?, ?)',
                        [circuit['id'], keyword['id']])
             db.commit()
 
@@ -606,6 +606,23 @@ def update_circuit():
     except ValueError:
         resp['error'] = 'An error occured while updating place.'
 
+    return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/get-circuit-id/<int:circuit_id>', methods=['GET'])
+def get_circuit_id(circuit_id):
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+    try:
+        circuit = get_circuit(circuit_id)
+        resp['status'] = 'OK'
+        resp['circuit'] = circuit
+    except:
+        resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
 
 

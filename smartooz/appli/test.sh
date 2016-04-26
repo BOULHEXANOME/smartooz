@@ -70,13 +70,22 @@ curl -X POST -d '{"name":"mon circuit","description":"ma description","keywords"
 
 echo
 echo
+echo "GET circuit by id.. Expect OK"
+curl "http://127.0.0.1:5000/get-circuit-id/1" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
 echo "Edit circuit.. Expect OK"
 curl -X POST -d '{"id":1, "name":"mon circuit","description":"ma 2","keywords":["keyWord-circuit", "2aaaa"]}' http://127.0.0.1:5000/update-circuit --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo
+echo "GET circuit by id.. Expect OK"
+curl "http://127.0.0.1:5000/get-circuit-id/1" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
 echo "Logout.. Expect OK"
-echo "Logout.. Expect OK -> updated"
 curl "http://127.0.0.1:5000/logout" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
