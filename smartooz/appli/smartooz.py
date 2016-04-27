@@ -751,31 +751,31 @@ def get_all_circuits_keywords():
 #     db.commit()
 #     resp['status'] = 'OK'
 #     return render_template('response.json', response=json.dumps(resp))
-#
-#
-# @app.route('/get-circuit', methods=['GET'])
-# def get_circuits():
-#     resp = {
-#         'status': 'KO'
-#     }
-#     if not session.get('user_id'):
-#         resp['error'] = 'Please login or register to access our services.'
-#         return render_template('response.json', response=json.dumps(resp))
-#
-#     try:
-#         db = get_db()
-#         cur = db.execute('SELECT * FROM places')
-#         list_places = cur.fetchall()
-#         for index, place in enumerate(list_places):
-#             cur = db.execute(
-#                 'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
-#                 [place['id']])
-#             list_places[index]['keywords'] = cur.fetchall()
-#         resp['status'] = 'OK'
-#         resp['list_places'] = list_places
-#     except:
-#         resp['error'] = 'An error occured while getting places.'
-#     return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/get-circuits', methods=['GET'])
+def get_circuits():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    try:
+        db = get_db()
+        cur = db.execute('SELECT * FROM circuit')
+        list_circuits = cur.fetchall()
+        for index, circuit in enumerate(list_circuits):
+            cur = db.execute(
+                'SELECT keywords.name FROM keywords,circuit_keywords WHERE keywords.id=circuit_keywords.id_keyword AND id_circuit=?',
+                [circuit['id']])
+            list_circuits[index]['keywords'] = cur.fetchall()
+        resp['status'] = 'OK'
+        resp['circuits'] = list_circuits
+    except:
+        resp['error'] = 'An error occured while getting circuits.'
+    return render_template('response.json', response=json.dumps(resp))
 
 
 

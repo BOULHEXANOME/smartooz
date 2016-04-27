@@ -115,6 +115,11 @@ curl "http://127.0.0.1:5000/get-all-circuits-keywords" --header "Content-Type:ap
 
 echo
 echo
+echo "GET all circuits.. Expect OK"
+curl "http://127.0.0.1:5000/get-circuits" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
 echo "Delete user.. Expect OK"
 curl -X POST http://127.0.0.1:5000/delete-user --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
