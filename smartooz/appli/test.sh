@@ -85,6 +85,11 @@ curl "http://127.0.0.1:5000/get-circuit-id/1" --header "Content-Type:application
 
 echo
 echo
+echo "GET circuits by keyword.. Expect OK"
+curl "http://127.0.0.1:5000/get-circuits-keyword/?keywords=keyWord-circuit&keywords=2aaaa" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
 echo "Logout.. Expect OK"
 curl "http://127.0.0.1:5000/logout" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 

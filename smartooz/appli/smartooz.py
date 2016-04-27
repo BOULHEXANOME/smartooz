@@ -646,42 +646,42 @@ def get_circuit_id(circuit_id):
         resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
 
-#
-# @app.route('/get-circuit-keyword/', methods=['GET'])
-# def get_circuit_keyword():
-#     resp = {
-#         'status': 'KO'
-#     }
-#     if not session.get('user_id'):
-#         resp['error'] = 'Please login or register to access our services.'
-#         return render_template('response.json', response=json.dumps(resp))
-#
-#     keywords = request.args.getlist('keywords')
-#     for i, keyword in enumerate(keywords):
-#         keywords[i] = keyword.upper()
-#     try:
-#         places_final = []
-#         first = True
-#         db = get_db()
-#         for k in keywords:
-#             list_places = db.execute(
-#                 'SELECT * FROM places WHERE id IN (SELECT id_place FROM place_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))',
-#                 [k])
-#             places = list_places.fetchall()
-#             if first:
-#                 places_final = places
-#             else:
-#                 places_final = list(set(places).intersection(places_final))
-#         for index, place in enumerate(places_final):
-#             cur = db.execute(
-#                 'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
-#                 [place['id']])
-#             places_final[index]['keywords'] = cur.fetchall()
-#         resp['status'] = 'OK'
-#         resp['places'] = places_final
-#     except:
-#         resp['error'] = 'An error occured while getting places.'
-#     return render_template('response.json', response=json.dumps(resp))
+
+@app.route('/get-circuits-keyword/', methods=['GET'])
+def get_circuits_keyword():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    keywords = request.args.getlist('keywords')
+    for i, keyword in enumerate(keywords):
+        keywords[i] = keyword.upper()
+    try:
+        circuits_final = []
+        first = True
+        db = get_db()
+        for k in keywords:
+            list_circuits = db.execute(
+                'SELECT * FROM circuit WHERE id IN (SELECT id_circuit FROM circuit_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))',
+                [k])
+            circuits = list_circuits.fetchall()
+            if first:
+                circuits_final = circuits
+            else:
+                circuits_final = list(set(circuits).intersection(circuits_final))
+        for index, circuit in enumerate(circuits_final):
+            cur = db.execute(
+                'SELECT keywords.name FROM keywords,circuit_keywords WHERE keywords.id=circuit_keywords.id_keyword AND id_circuit=?',
+                [circuit['id']])
+            circuits_final[index]['keywords'] = cur.fetchall()
+        resp['status'] = 'OK'
+        resp['circuits'] = circuits_final
+    except ValueError:
+        resp['error'] = 'An error occured while getting circuits.'
+    return render_template('response.json', response=json.dumps(resp))
 #
 #
 # @app.route('/delete-circuit/', methods=['POST'])
