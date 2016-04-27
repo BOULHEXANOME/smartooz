@@ -176,7 +176,7 @@ def add_place():
     return render_template('response.json', response=json.dumps(resp))
 
 
-@app.route('/delete-place/', methods=['POST'])
+@app.route('/delete-place', methods=['POST'])
 def delete_place():
     resp = {
         'status': 'KO'
@@ -292,6 +292,9 @@ def get_place_id(place_id):
         return render_template('response.json', response=json.dumps(resp))
     try:
         place = get_place(place_id)
+        if not place:
+            resp['error'] = 'Place not found.'
+            return render_template('response.json', response=json.dumps(resp))
         resp['status'] = 'OK'
         resp['place'] = place
     except:
@@ -659,6 +662,9 @@ def get_circuit_id(circuit_id):
         return render_template('response.json', response=json.dumps(resp))
     try:
         circuit = get_circuit(circuit_id)
+        if not circuit:
+            resp['error'] = 'Circuit not found.'
+            return render_template('response.json', response=json.dumps(resp))
         resp['status'] = 'OK'
         resp['circuit'] = circuit
     except:
@@ -721,36 +727,35 @@ def get_all_circuits_keywords():
         resp['error'] = 'An error occured while getting circuits keywords.'
     return render_template('response.json', response=json.dumps(resp))
 
-#
-#
-# @app.route('/delete-circuit/', methods=['POST'])
-# def circuit_place():
-#     resp = {
-#         'status': 'KO'
-#     }
-#     if not session.get('user_id'):
-#         resp['error'] = 'Please login or register to access our services.'
-#         return render_template('response.json', response=json.dumps(resp))
-#
-#     request_json = request.get_json()
-#     user = get_user(session['user_id'])
-#     place = get_place(request_json.get('place_id', '-1'))
-#     if not user:
-#         resp['error'] = 'User not found sorry.'
-#         return render_template('response.json', response=json.dumps(resp))
-#     if not place:
-#         resp['error'] = 'Place not found sorry.'
-#         return render_template('response.json', response=json.dumps(resp))
-#     if place['id_user'] != user['id']:
-#         resp['error'] = 'You are not allowed to access or modify this ressource.'
-#         return render_template('response.json', response=json.dumps(resp))
-#
-#     db = get_db()
-#     db.execute('DELETE FROM places WHERE id=?', [place['id']])
-#     db.execute('DELETE FROM place_keywords WHERE id_place=?', [place['id']])
-#     db.commit()
-#     resp['status'] = 'OK'
-#     return render_template('response.json', response=json.dumps(resp))
+
+@app.route('/delete-circuit', methods=['POST'])
+def delete_circuit():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    request_json = request.get_json()
+    user = get_user(session['user_id'])
+    circuit = get_circuit(request_json.get('circuit_id', '-1'))
+    if not user:
+        resp['error'] = 'User not found sorry.'
+        return render_template('response.json', response=json.dumps(resp))
+    if not circuit:
+        resp['error'] = 'Circuit not found sorry.'
+        return render_template('response.json', response=json.dumps(resp))
+    if circuit['id_user'] != user['id']:
+        resp['error'] = 'You are not allowed to access or modify this ressource.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    db = get_db()
+    db.execute('DELETE FROM circuit WHERE id=?', [circuit['id']])
+    db.execute('DELETE FROM circuit_keywords WHERE id_circuit=?', [circuit['id']])
+    db.commit()
+    resp['status'] = 'OK'
+    return render_template('response.json', response=json.dumps(resp))
 
 
 @app.route('/get-circuits', methods=['GET'])

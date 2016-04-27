@@ -120,6 +120,26 @@ curl "http://127.0.0.1:5000/get-circuits" --header "Content-Type:application/jso
 
 echo
 echo
+echo "DELETE circuit.. Expect OK"
+curl "http://127.0.0.1:5000/delete-circuit" -X POST -d '{"circuit_id":1}' --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
+echo "DELETE place.. Expect OK"
+curl "http://127.0.0.1:5000/delete-place" -X POST -d '{"place_id":1}' --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
+echo "GET place1 by id.. (lat 45.75) Expect ERROR"
+curl "http://127.0.0.1:5000/get-place-id/1" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
+echo "GET circuit by id.. Expect ERROR"
+curl "http://127.0.0.1:5000/get-circuit-id/1" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
 echo "Delete user.. Expect OK"
 curl -X POST http://127.0.0.1:5000/delete-user --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
