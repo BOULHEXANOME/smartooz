@@ -194,7 +194,7 @@ def add_place():
     return render_template('response.json', response=json.dumps(resp))
 
 
-@app.route('/delete-place/', methods=['POST'])
+@app.route('/delete-place', methods=['POST'])
 def delete_place():
     resp = {
         'status': 'KO'
@@ -236,14 +236,14 @@ def get_places():
     try:
         db = get_db()
         cur = db.execute('SELECT * FROM places')
-        list_places = cur.fetchall()
-        for index, place in enumerate(list_places):
+        places = cur.fetchall()
+        for index, place in enumerate(places):
             cur = db.execute(
                 'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
                 [place['id']])
-            list_places[index]['keywords'] = cur.fetchall()
+            places[index]['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
-        resp['list_places'] = list_places
+        resp['places'] = places
     except:
         resp['error'] = 'An error occured while getting places.'
     return render_template('response.json', response=json.dumps(resp))
@@ -274,7 +274,7 @@ def get_place_coord(lat, longitude):
     
     
 @app.route('/get-place-radius-coord/<float:lat>,<float:longitude>,<int:radius>', methods=['GET'])
-def get_place_radius_coord(lat,longitude,radius):
+def get_place_radius_coord(lat, longitude, radius):
     resp = {
         'status': 'KO'
     }
@@ -286,11 +286,15 @@ def get_place_radius_coord(lat,longitude,radius):
         db = get_db()
         cur = db.execute('SELECT * FROM places WHERE (lat>? AND lat<? AND long>? AND long<?)', [lat-(radius*0.009043),lat+(radius*0.009043),longitude-(radius*0.0131043),longitude+(radius*0.0131043)])
         
-        place = cur.fetchone()
-        cur = db.execute('SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?', [place['id']])
-        place['keywords'] = cur.fetchall()
+        places = cur.fetchall()
+
+        for index, place in enumerate(places):
+            cur = db.execute(
+                'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
+                [place['id']])
+            places[index]['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
-        resp['place'] = place
+        resp['places'] = places
     except:
         resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
@@ -306,6 +310,9 @@ def get_place_id(place_id):
         return render_template('response.json', response=json.dumps(resp))
     try:
         place = get_place(place_id)
+        if not place:
+            resp['error'] = 'Place not found.'
+            return render_template('response.json', response=json.dumps(resp))
         resp['status'] = 'OK'
         resp['place'] = place
     except:
@@ -418,6 +425,25 @@ def update_place():
     except:
         resp['error'] = 'An error occured while updating place.'
 
+    return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/get-all-places-keywords', methods=['GET'])
+def get_all_places_keywords():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    try:
+        db = get_db()
+        keywords = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_keyword FROM place_keywords)', [])
+        resp['status'] = 'OK'
+        resp['keywords'] = keywords.fetchall()
+    except:
+        resp['error'] = 'An error occured while getting places keywords.'
     return render_template('response.json', response=json.dumps(resp))
 
 
@@ -654,11 +680,126 @@ def get_circuit_id(circuit_id):
         return render_template('response.json', response=json.dumps(resp))
     try:
         circuit = get_circuit(circuit_id)
+        if not circuit:
+            resp['error'] = 'Circuit not found.'
+            return render_template('response.json', response=json.dumps(resp))
         resp['status'] = 'OK'
         resp['circuit'] = circuit
     except:
         resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/get-circuits-keyword/', methods=['GET'])
+def get_circuits_keyword():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    keywords = request.args.getlist('keywords')
+    for i, keyword in enumerate(keywords):
+        keywords[i] = keyword.upper()
+    try:
+        circuits_final = []
+        first = True
+        db = get_db()
+        for k in keywords:
+            list_circuits = db.execute(
+                'SELECT * FROM circuit WHERE id IN (SELECT id_circuit FROM circuit_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))',
+                [k])
+            circuits = list_circuits.fetchall()
+            if first:
+                circuits_final = circuits
+            else:
+                circuits_final = list(set(circuits).intersection(circuits_final))
+        for index, circuit in enumerate(circuits_final):
+            cur = db.execute(
+                'SELECT keywords.name FROM keywords,circuit_keywords WHERE keywords.id=circuit_keywords.id_keyword AND id_circuit=?',
+                [circuit['id']])
+            circuits_final[index]['keywords'] = cur.fetchall()
+        resp['status'] = 'OK'
+        resp['circuits'] = circuits_final
+    except ValueError:
+        resp['error'] = 'An error occured while getting circuits.'
+    return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/get-all-circuits-keywords', methods=['GET'])
+def get_all_circuits_keywords():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    try:
+        db = get_db()
+        circuits = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_circuit FROM circuit_keywords)', [])
+        resp['status'] = 'OK'
+        resp['keywords'] = circuits.fetchall()
+    except ValueError:
+        resp['error'] = 'An error occured while getting circuits keywords.'
+    return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/delete-circuit', methods=['POST'])
+def delete_circuit():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    request_json = request.get_json()
+    user = get_user(session['user_id'])
+    circuit = get_circuit(request_json.get('circuit_id', '-1'))
+    if not user:
+        resp['error'] = 'User not found sorry.'
+        return render_template('response.json', response=json.dumps(resp))
+    if not circuit:
+        resp['error'] = 'Circuit not found sorry.'
+        return render_template('response.json', response=json.dumps(resp))
+    if circuit['id_user'] != user['id']:
+        resp['error'] = 'You are not allowed to access or modify this ressource.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    db = get_db()
+    db.execute('DELETE FROM circuit WHERE id=?', [circuit['id']])
+    db.execute('DELETE FROM circuit_keywords WHERE id_circuit=?', [circuit['id']])
+    db.commit()
+    resp['status'] = 'OK'
+    return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/get-circuits', methods=['GET'])
+def get_circuits():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    try:
+        db = get_db()
+        cur = db.execute('SELECT * FROM circuit')
+        list_circuits = cur.fetchall()
+        for index, circuit in enumerate(list_circuits):
+            cur = db.execute(
+                'SELECT keywords.name FROM keywords,circuit_keywords WHERE keywords.id=circuit_keywords.id_keyword AND id_circuit=?',
+                [circuit['id']])
+            list_circuits[index]['keywords'] = cur.fetchall()
+        resp['status'] = 'OK'
+        resp['circuits'] = list_circuits
+    except:
+        resp['error'] = 'An error occured while getting circuits.'
+    return render_template('response.json', response=json.dumps(resp))
+
 
 
 ##########################################################################################
