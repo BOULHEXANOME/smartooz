@@ -407,6 +407,25 @@ def update_place():
     return render_template('response.json', response=json.dumps(resp))
 
 
+@app.route('/get-all-places-keywords', methods=['GET'])
+def get_all_places_keywords():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    try:
+        db = get_db()
+        keywords = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_keyword FROM place_keywords)', [])
+        resp['status'] = 'OK'
+        resp['keywords'] = keywords.fetchall()
+    except:
+        resp['error'] = 'An error occured while getting places keywords.'
+    return render_template('response.json', response=json.dumps(resp))
+
+
 ##########################################################################################
 #                                     END PLACES
 ##########################################################################################
@@ -682,6 +701,26 @@ def get_circuits_keyword():
     except ValueError:
         resp['error'] = 'An error occured while getting circuits.'
     return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/get-all-circuits-keywords', methods=['GET'])
+def get_all_circuits_keywords():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+
+    try:
+        db = get_db()
+        circuits = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_circuit FROM circuit_keywords)', [])
+        resp['status'] = 'OK'
+        resp['keywords'] = circuits.fetchall()
+    except ValueError:
+        resp['error'] = 'An error occured while getting circuits keywords.'
+    return render_template('response.json', response=json.dumps(resp))
+
 #
 #
 # @app.route('/delete-circuit/', methods=['POST'])
