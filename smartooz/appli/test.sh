@@ -16,17 +16,17 @@ curl -X POST -d '{"password":"hugo","username":"papin2"}' http://127.0.0.1:5000/
 echo
 echo
 echo "Add place1.. Expect OK"
-curl -X POST -d '{"latitude":45.75,"longitude":4.8,"address":"ta mere","openning_hours":"tout le temps","name":"tour papine","description":"flemme","keywords":["sfm", "HOHO"]}' http://127.0.0.1:5000/add-place --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+curl -X POST -d '{"latitude":45.75,"longitude":4.8,"address":"ta mere","phone":"0602050809","website":"www.truc.fr","openning_hours":"tout le temps","name":"tour papine","description":"flemme","keywords":["sfm", "HOHO"]}' http://127.0.0.1:5000/add-place --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo
 echo "Add place1 again.. Expect err"
-curl -X POST -d '{"latitude":45.75,"longitude":4.8,"address":"ta mere","openning_hours":"tout le temps","name":"tour papine","description":"flemme","keywords":["sfm", "HOHO"]}' http://127.0.0.1:5000/add-place --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+curl -X POST -d '{"latitude":45.75,"longitude":4.8,"address":"ta mere","phone":"0602050809","website":"www.truc.fr","openning_hours":"tout le temps","name":"tour papine","description":"flemme","keywords":["sfm", "HOHO"]}' http://127.0.0.1:5000/add-place --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo
 echo "Add place2.. Expect OK"
-curl -X POST -d '{"latitude":45.76,"longitude":4.8,"address":"ta 2","openning_hours":"tout le temps","name":"tour sdk","description":"flemme","keywords":["sfm", "c est génial"]}' http://127.0.0.1:5000/add-place --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+curl -X POST -d '{"latitude":45.76,"longitude":4.8,"address":"ta 2","phone":"0602050809","website":"www.truc.fr","openning_hours":"tout le temps","name":"tour sdk","description":"flemme","keywords":["sfm", "c est génial"]}' http://127.0.0.1:5000/add-place --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo
@@ -50,7 +50,7 @@ curl "http://127.0.0.1:5000/get-place-coord/45.75,4.8" --header "Content-Type:ap
 
 echo
 echo
-echo "GET place1 by coord radius.. (lat 45.75, long 4.8, radius 5) Expect OK"
+echo "GET places by coord radius.. (lat 45.75, long 4.8, radius 20) Expect OK"
 curl "http://127.0.0.1:5000/get-place-radius-coord/45.75,4.8,5" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
