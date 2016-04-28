@@ -113,6 +113,24 @@ def get_circuit(circuit_id):
         [circuit_id])
     circuit['places'] = cur.fetchall()
     return circuit
+    
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+    try:
+        f = request.files['image']
+        f.save('./pictures/image.jpg')
+        resp['status'] = 'OK'
+
+    except:
+        resp['error'] = 'An error occured while uploading file.'
+    return render_template('response.json', response=json.dumps(resp))
 
 
 ##########################################################################################
