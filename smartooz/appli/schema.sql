@@ -68,7 +68,24 @@ CREATE TABLE circuit (
   length_km float not null,
   height_difference_m float not null,
   note_5 float not null,
+  nb_vote integer not null,
   id_user integer not null
+);
+
+DROP TABLE IF EXISTS vote_user_place;
+CREATE TABLE vote_user_place (
+  id_user integer not null,
+  id_place integer not null,
+  vote float not null,
+  UNIQUE(id_place, id_user)
+);
+
+DROP TABLE IF EXISTS vote_user_circuit;
+CREATE TABLE vote_user_circuit (
+  id_user integer not null,
+  id_circuit integer not null,
+  vote float not null,
+  UNIQUE(id_circuit, id_user)
 );
 
 DELETE FROM users;
@@ -77,3 +94,5 @@ DELETE FROM place_keywords;
 DELETE FROM keywords;
 DELETE FROM circuit;
 DELETE FROM circuit_places;
+DELETE FROM vote_user_place;
+DELETE FROM vote_user_circuit;

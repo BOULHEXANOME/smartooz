@@ -500,6 +500,50 @@ def get_all_places_keywords():
     return render_template('response.json', response=json.dumps(resp))
 
 
+def recalculate_vote_place(place):
+    db = get_db()
+    cur = db.execute("SELECT AVG(vote) AS vote_moyen FROM vote_user_place WHERE id_place=?", [place['id']])
+    note_moy = cur.fetchone()
+    db.execute("UPDATE places SET nb_vote=?, note_5=? WHERE id=?", [place['nb_vote']+1, note_moy['vote_moyen'], place['id']])
+    db.commit()
+
+
+@app.route('/vote-place', methods=['POST'])
+def vote_place():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+    request_json = request.get_json()
+    place_id = request_json.get('id')
+    place = get_place(place_id)
+    note = float(request_json.get('note'))
+    if place is None:
+        resp['error'] = "Place not found."
+        return render_template('response.json', response=json.dumps(resp))
+    if note < 0 or note > 5:
+        resp['error'] = "Note should be between 0 and 5."
+        return render_template('response.json', response=json.dumps(resp))
+    try:
+        db = get_db()
+        cur = db.execute("SELECT * FROM vote_user_place WHERE id_user=? AND id_place=?", [session['user_id'], place_id])
+        vote = cur.fetchone()
+        if vote is None:
+            db.execute("INSERT INTO vote_user_place (id_user, id_place, vote) VALUES (?, ?, ?)", [session['user_id'], place_id, note])
+        else:
+            db.execute("UPDATE vote_user_place SET vote=? WHERE id_user=? AND id_place=?", [note, session['user_id'], place_id])
+        db.commit()
+        cur = db.execute("SELECT * FROM places WHERE id=?", [place_id])
+        place = cur.fetchone()
+        recalculate_vote_place(place)
+        resp['status'] = 'OK'
+    except ValueError:
+        resp['error'] = 'An error occured while voting.'
+    return render_template('response.json', response=json.dumps(resp))
+
+
 ##########################################################################################
 #                                     END PLACES
 ##########################################################################################
@@ -599,13 +643,14 @@ def logout():
 
 
 def request_api_google(places):
-
     if USE_API:
         virgule = '%2C'
         pipe = '%7C'
 
         place_origin = get_place(places[0])
         place_dest = get_place(places[-1])
+        if place_origin is None or place_dest is None:
+            return None, None
         origin = str(place_origin['lat']) + virgule + str(place_origin['long'])
         destination = str(place_dest['lat']) + virgule + str(place_dest['long'])
 
@@ -678,7 +723,7 @@ def add_circuit():
 
         db = get_db()
         db.execute(
-            'INSERT INTO circuit (name, description, length_km, height_difference_m, note_5, id_user) VALUES (?, ?, ?, ?, 0, ?)',
+            'INSERT INTO circuit (name, description, length_km, height_difference_m, note_5, nb_vote, id_user) VALUES (?, ?, ?, ?, 0, 0, ?)',
             [request_json.get('name'),
              request_json.get('description'),
              calc_length,
@@ -708,7 +753,7 @@ def add_circuit():
                            [circuit_inserted['id'], p, index])
                 db.commit()
         resp['status'] = 'OK'
-    except AssertionError:
+    except:
         resp['error'] = 'An error occured while inserting circuit.'
     return render_template('response.json', response=json.dumps(resp))
 
@@ -843,7 +888,7 @@ def get_circuits_keyword():
             circuits_final[index]['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
         resp['circuits'] = circuits_final
-    except ValueError:
+    except:
         resp['error'] = 'An error occured while getting circuits.'
     return render_template('response.json', response=json.dumps(resp))
 
@@ -862,7 +907,7 @@ def get_all_circuits_keywords():
         circuits = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_circuit FROM circuit_keywords)', [])
         resp['status'] = 'OK'
         resp['keywords'] = circuits.fetchall()
-    except ValueError:
+    except:
         resp['error'] = 'An error occured while getting circuits keywords.'
     return render_template('response.json', response=json.dumps(resp))
 
@@ -920,6 +965,51 @@ def get_circuits():
     except:
         resp['error'] = 'An error occured while getting circuits.'
     return render_template('response.json', response=json.dumps(resp))
+
+
+def recalculate_vote_circuit(circuit):
+    db = get_db()
+    cur = db.execute("SELECT AVG(vote) AS vote_moyen FROM vote_user_circuit WHERE id_circuit=?", [circuit['id']])
+    note_moy = cur.fetchone()
+    db.execute("UPDATE circuit SET nb_vote=?, note_5=? WHERE id=?", [circuit['nb_vote']+1, note_moy['vote_moyen'], circuit['id']])
+    db.commit()
+
+
+@app.route('/vote-circuit', methods=['POST'])
+def vote_circuit():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+    request_json = request.get_json()
+    circuit_id = request_json.get('id')
+    circuit = get_circuit(circuit_id)
+    note = float(request_json.get('note'))
+    if circuit is None:
+        resp['error'] = "Circuit not found."
+        return render_template('response.json', response=json.dumps(resp))
+    if note < 0 or note > 5:
+        resp['error'] = "Note should be between 0 and 5."
+        return render_template('response.json', response=json.dumps(resp))
+    try:
+        db = get_db()
+        cur = db.execute("SELECT * FROM vote_user_circuit WHERE id_user=? AND id_circuit=?", [session['user_id'], circuit_id])
+        vote = cur.fetchone()
+        if vote is None:
+            db.execute("INSERT INTO vote_user_circuit (id_user, id_circuit, vote) VALUES (?, ?, ?)", [session['user_id'], circuit_id, note])
+        else:
+            db.execute("UPDATE vote_user_circuit SET vote=? WHERE id_user=? AND id_circuit=?", [note, session['user_id'], circuit_id])
+        db.commit()
+        cur = db.execute("SELECT * FROM circuit WHERE id=?", [circuit_id])
+        circuit = cur.fetchone()
+        recalculate_vote_circuit(circuit)
+        resp['status'] = 'OK'
+    except:
+        resp['error'] = 'An error occured while voting.'
+    return render_template('response.json', response=json.dumps(resp))
+
 
 ##########################################################################################
 #                                     END CIRCUITS
