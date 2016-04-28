@@ -1,1 +1,3 @@
 **__pycache__/
+smartooz/appli/*.db
+**.idea/

@@ -1,0 +1,146 @@
+// ADDING PLACE : POST http://127.0.0.1:5000/add-place
+{
+    "latitude": 45.75,
+    "longitude": 4.8,
+    "address": "ta mere",  // (optionnel)
+    "phone": "0602050809", // (optionnel)
+    "website": "www.truc.fr", // (optionnel)
+    "openning_hours": "tout le temps", // (optionnel)
+    "name": "tour papine",
+    "description": "flemme",
+    "keywords": ["sfm", "HOHO"] // (non vide)
+}
+
+// GET ALL PLACES : http://127.0.0.1:5000/get-places
+{
+    "places": [{
+        "keywords": [{
+            "name": "SFM"
+        }, {
+            "name": "HOHO"
+        }],
+        "note_5": 0.0,
+        "address": "ta mere",
+        "long": 4.8,
+        "nb_vote": 0,
+        "website": "www.truc.fr",
+        "id": 1,
+        "openning_hours": "tout le temps",
+        "lat": 45.75,
+        "phone": "0602050809",
+        "description": "flemme",
+        "name": "tour papine",
+        "id_user": 1
+    }, {
+        "keywords": [{
+            "name": "SFM"
+        }, {
+            "name": "C EST G\u00c9NIAL"
+        }],
+        "note_5": 0.0,
+        "address": "ta 2",
+        "long": 4.8,
+        "nb_vote": 0,
+        "website": "www.truc.fr",
+        "id": 2,
+        "openning_hours": "tout le temps",
+        "lat": 45.76,
+        "phone": "0602050809",
+        "description": "flemme",
+        "name": "tour sdk",
+        "id_user": 1
+    }],
+    "status": "OK"
+}
+
+// GET PLACES by keywords : http://127.0.0.1:5000/get-places-keyword/?keywords=sfm&keywords=c%20est%20g%C3%A9nial -> %20=' ' %C3%A9='é' (c'est url-encodé)
+{
+    "places": [{
+        "keywords": [{
+            "name": "SFM"
+        }, {
+            "name": "HOHO"
+        }],
+        "note_5": 0.0,
+        "address": "ta mere",
+        "long": 4.8,
+        "nb_vote": 0,
+        "website": "www.truc.fr",
+        "id": 1,
+        "openning_hours": "tout le temps",
+        "lat": 45.75,
+        "phone": "0602050809",
+        "description": "flemme",
+        "name": "tour papine",
+        "id_user": 1
+    }, {
+        "keywords": [{
+            "name": "SFM"
+        }, {
+            "name": "C EST G\u00c9NIAL"
+        }],
+        "note_5": 0.0,
+        "address": "ta 2",
+        "long": 4.8,
+        "nb_vote": 0,
+        "website": "www.truc.fr",
+        "id": 2,
+        "openning_hours": "tout le temps",
+        "lat": 45.76,
+        "phone": "0602050809",
+        "description": "flemme",
+        "name": "tour sdk",
+        "id_user": 1
+    }],
+    "status": "OK"
+}
+
+// GET PLACE by id (1) : http://127.0.0.1:5000/get-place-id/1
+{
+    "place": {
+        "keywords": [{
+            "name": "C EST G\u00c9NIAL"
+        }, {
+            "name": "2E KEYWORD"
+        }],
+        "note_5": 0.0,
+        "address": "ta 2",
+        "long": 4.8,
+        "nb_vote": 0,
+        "website": null,
+        "id": 1,
+        "openning_hours": "tout le temps",
+        "lat": 45.75,
+        "phone": null,
+        "description": "flemme",
+        "name": "tour sdk",
+        "id_user": 1
+    },
+    "status": "OK"
+}
+
+// GET PLACE by latitude,longitude : http://127.0.0.1:5000/get-place-coord/45.75,4.8
+{
+    "place": {
+        "keywords": [{
+            "name": "C EST G\u00c9NIAL"
+        }, {
+            "name": "2E KEYWORD"
+        }],
+        "note_5": 0.0,
+        "address": "ta 2",
+        "long": 4.8,
+        "nb_vote": 0,
+        "website": null,
+        "id": 1,
+        "openning_hours": "tout le temps",
+        "lat": 45.75,
+        "phone": null,
+        "description": "flemme",
+        "name": "tour sdk",
+        "id_user": 1
+    },
+    "status": "OK"
+}
+
+// etc.. regardez test.sh !!
