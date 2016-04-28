@@ -5,6 +5,8 @@ from flask import Flask, request, session, g, redirect, url_for, abort, \
 
 app = Flask(__name__)
 
+app.config['ALLOWED_EXTENSIONS'] = set(['png', 'jpg', 'jpeg', 'gif'])
+
 # Load default config and override config from an environment variable
 app.config.update(dict(
     DATABASE=os.path.join(app.root_path, 'smartooz.db'),
@@ -114,8 +116,8 @@ def get_circuit(circuit_id):
     return circuit
     
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
+@app.route('/upload/<int:circuit_id>,<int:place_id>', methods=['POST'])
+def upload_file(circuit_id,place_id):
     resp = {
         'status': 'KO'
     }
@@ -124,12 +126,30 @@ def upload_file():
         return render_template('response.json', response=json.dumps(resp))
     try:
         f = request.files['image']
-        f.save('./pictures/image.jpg')
-        resp['status'] = 'OK'
+        
+        if f and allowed_file(f.filename):
+            
+            path_user = 'user_' + str(session.get('user_id'))
+            path_circuit = 'circuit_' + str(circuit_id)
+            name_file = 'place_' + str(place_id) + '.' + f.filename.rsplit('.', 1)[1]
+            
+            if not os.path.exists(os.path.join('pictures', path_user, path_circuit)):
+                os.makedirs(os.path.join('pictures', path_user, path_circuit))
+            
+            f.save(os.path.join('.', 'pictures', path_user, path_circuit, name_file))
+            
+            db = get_db()
+            db.execute('INSERT INTO photo_circuit_place_user (id_place, id_circuit, id_user) VALUES (?, ?, ?)', [place_id, circuit_id, session.get('user_id')])
+            db.commit()
+            resp['status'] = 'OK'
 
-    except:
+    except ValueError:
         resp['error'] = 'An error occured while uploading file.'
     return render_template('response.json', response=json.dumps(resp))
+    
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
 
 ##########################################################################################
 #                                   END USEFULL METHODS
