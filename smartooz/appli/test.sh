@@ -90,6 +90,11 @@ curl -X POST -F "image=@./test_upload.jpg" "http://127.0.0.1:5000/upload/1,1" -c
 
 echo
 echo
+echo "download.. Expect OK"
+curl -X GET "http://127.0.0.1:5000/download-picture/1,1" -c /tmp/cookie -b /tmp/cookie > /tmp/image.jpg
+
+echo
+echo
 echo "GET circuits by keyword.. Expect OK"
 curl "http://127.0.0.1:5000/get-circuits-keyword/?keywords=keyWord-circuit&keywords=2aaaa" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 

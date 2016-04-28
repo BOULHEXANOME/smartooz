@@ -167,12 +167,15 @@ def download_file(circuit_id, place_id):
         path_circuit = 'circuit_' + str(circuit_id)
         name_file = 'place_' + str(place_id)
             
-        file_path = os.path.join('.', 'pictures', path_user, path_circuit)
+        file_path = os.path.join('.', 'pictures', path_user, path_circuit, name_file)
+        from flask import send_file
+        return send_file(file_path, mimetype='image/jpeg')
+        #return open(file_path).read()
         resp['status'] = 'OK'
-        return send_from_directory(directory=file_path, filename=name_file), render_template('response.json', response=json.dumps(resp))
+        #return render_template('response.json', response=json.dumps(resp)), f
 
     except ValueError:
-        resp['error'] = 'An error occured while uploading file.'
+        resp['error'] = 'An error occured while downloading file.'
     return render_template('response.json', response=json.dumps(resp))
     
 def allowed_file(filename):
