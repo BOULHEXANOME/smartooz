@@ -596,24 +596,24 @@ def logout():
 
 
 def request_api_google(places):
-    virgule = '%2C'
-    pipe = '%7C'
-
-    place_origin = get_place(places[0])
-    place_dest = get_place(places[-1])
-    origin = str(place_origin['lat']) + virgule + str(place_origin['long'])
-    destination = str(place_dest['lat']) + virgule + str(place_dest['long'])
-
-    places = places[1:-1]
-    waypoints = ''
-    for p_id in places:
-        place = get_place(p_id)
-        if place is None:
-            return None, None
-        waypoints += str(place['lat']) + virgule + str(place['long']) + pipe
-    waypoints = waypoints[0:-3]
 
     if USE_API:
+        virgule = '%2C'
+        pipe = '%7C'
+
+        place_origin = get_place(places[0])
+        place_dest = get_place(places[-1])
+        origin = str(place_origin['lat']) + virgule + str(place_origin['long'])
+        destination = str(place_dest['lat']) + virgule + str(place_dest['long'])
+
+        places = places[1:-1]
+        waypoints = ''
+        for p_id in places:
+            place = get_place(p_id)
+            if place is None:
+                return None, None
+            waypoints += str(place['lat']) + virgule + str(place['long']) + pipe
+        waypoints = waypoints[0:-3]
         try:
             import requests
             url_api_directions = 'https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&waypoints={waypoints}&key=AIzaSyCwFv6LLGksQxm-YFoVrrmbx9ip3xPbdDA&mode=walking'
