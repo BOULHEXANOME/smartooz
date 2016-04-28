@@ -116,6 +116,11 @@ def get_circuit(circuit_id):
     circuit['places'] = cur.fetchall()
     return circuit
 
+ ##########################################################################################
+#                                   END USEFULL METHODS
+##########################################################################################
+#                                        PICTURES
+##########################################################################################
 
 @app.route('/upload/<int:circuit_id>,<int:place_id>', methods=['POST'])
 def upload_file(circuit_id,place_id):
@@ -132,7 +137,7 @@ def upload_file(circuit_id,place_id):
             
             path_user = 'user_' + str(session.get('user_id'))
             path_circuit = 'circuit_' + str(circuit_id)
-            name_file = 'place_' + str(place_id) + '.' + f.filename.rsplit('.', 1)[1]
+            name_file = 'place_' + str(place_id)
             
             if not os.path.exists(os.path.join('pictures', path_user, path_circuit)):
                 os.makedirs(os.path.join('pictures', path_user, path_circuit))
@@ -148,12 +153,34 @@ def upload_file(circuit_id,place_id):
         resp['error'] = 'An error occured while uploading file.'
     return render_template('response.json', response=json.dumps(resp))
     
+    
+@app.route('/download-picture/<int:circuit_id>,<int:place_id>', methods=['GET'])
+def download_file(circuit_id, place_id):
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+    try:
+        path_user = 'user_' + str(session.get('user_id'))
+        path_circuit = 'circuit_' + str(circuit_id)
+        name_file = 'place_' + str(place_id)
+            
+        file_path = os.path.join('.', 'pictures', path_user, path_circuit)
+        resp['status'] = 'OK'
+        return send_from_directory(directory=file_path, filename=name_file), render_template('response.json', response=json.dumps(resp))
+
+    except ValueError:
+        resp['error'] = 'An error occured while uploading file.'
+    return render_template('response.json', response=json.dumps(resp))
+    
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
 
 ##########################################################################################
-#                                   END USEFULL METHODS
+#                                   END PICTURES
 ##########################################################################################
 #                                        PLACES
 ##########################################################################################
@@ -889,24 +916,6 @@ def get_circuits():
         resp['circuits'] = list_circuits
     except:
         resp['error'] = 'An error occured while getting circuits.'
-    return render_template('response.json', response=json.dumps(resp))
-
-
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    resp = {
-        'status': 'KO'
-    }
-    if not session.get('user_id'):
-        resp['error'] = 'Please login or register to access our services.'
-        return render_template('response.json', response=json.dumps(resp))
-    try:
-        f = request.files['image']
-        f.save('./pictures/image.jpg')
-        resp['status'] = 'OK'
-
-    except:
-        resp['error'] = 'An error occured while uploading file.'
     return render_template('response.json', response=json.dumps(resp))
 
 ##########################################################################################
