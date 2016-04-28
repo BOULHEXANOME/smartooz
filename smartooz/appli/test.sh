@@ -96,7 +96,7 @@ curl "http://127.0.0.1:5000/get-circuit-id/1" --header "Content-Type:application
 echo
 echo
 echo "upload.. Expect OK"
-curl -X POST -F "image=@./test_upload.jpg" http://127.0.0.1:5000/upload -c /tmp/cookie -b /tmp/cookie
+curl -X POST -F "image=@./test_upload.jpg" "http://127.0.0.1:5000/upload/1,1" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo

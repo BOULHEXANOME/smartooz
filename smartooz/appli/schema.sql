@@ -51,6 +51,15 @@ CREATE TABLE circuit_places (
   UNIQUE(id_place, id_circuit)
 );
 
+DROP TABLE IF EXISTS photo_circuit_place_user;
+CREATE TABLE photo_circuit_place_user (
+  id_place integer not null,
+  id_circuit integer not null,
+  id_user integer not null,
+  UNIQUE(id_place, id_circuit, id_user)
+
+);
+
 DROP TABLE IF EXISTS circuit;
 CREATE TABLE circuit (
   id integer primary key autoincrement,

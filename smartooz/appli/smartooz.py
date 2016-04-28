@@ -5,6 +5,8 @@ from flask import Flask, request, session, g, redirect, url_for, abort, \
 
 app = Flask(__name__)
 
+app.config['ALLOWED_EXTENSIONS'] = set(['png', 'jpg', 'jpeg', 'gif'])
+
 # Load default config and override config from an environment variable
 app.config.update(dict(
     DATABASE=os.path.join(app.root_path, 'smartooz.db'),
@@ -114,9 +116,71 @@ def get_circuit(circuit_id):
     circuit['places'] = cur.fetchall()
     return circuit
 
+ ##########################################################################################
+#                                   END USEFULL METHODS
+##########################################################################################
+#                                        PICTURES
+##########################################################################################
+
+@app.route('/upload/<int:circuit_id>,<int:place_id>', methods=['POST'])
+def upload_file(circuit_id,place_id):
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+    try:
+        f = request.files['image']
+        
+        if f and allowed_file(f.filename):
+            
+            path_user = 'user_' + str(session.get('user_id'))
+            path_circuit = 'circuit_' + str(circuit_id)
+            name_file = 'place_' + str(place_id)
+            
+            if not os.path.exists(os.path.join('pictures', path_user, path_circuit)):
+                os.makedirs(os.path.join('pictures', path_user, path_circuit))
+            
+            f.save(os.path.join('.', 'pictures', path_user, path_circuit, name_file))
+            
+            db = get_db()
+            db.execute('INSERT INTO photo_circuit_place_user (id_place, id_circuit, id_user) VALUES (?, ?, ?)', [place_id, circuit_id, session.get('user_id')])
+            db.commit()
+            resp['status'] = 'OK'
+
+    except ValueError:
+        resp['error'] = 'An error occured while uploading file.'
+    return render_template('response.json', response=json.dumps(resp))
+    
+    
+@app.route('/download-picture/<int:circuit_id>,<int:place_id>', methods=['GET'])
+def download_file(circuit_id, place_id):
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+    try:
+        path_user = 'user_' + str(session.get('user_id'))
+        path_circuit = 'circuit_' + str(circuit_id)
+        name_file = 'place_' + str(place_id)
+            
+        file_path = os.path.join('.', 'pictures', path_user, path_circuit)
+        resp['status'] = 'OK'
+        return send_from_directory(directory=file_path, filename=name_file), render_template('response.json', response=json.dumps(resp))
+
+    except ValueError:
+        resp['error'] = 'An error occured while uploading file.'
+    return render_template('response.json', response=json.dumps(resp))
+    
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
 
 ##########################################################################################
-#                                   END USEFULL METHODS
+#                                   END PICTURES
 ##########################################################################################
 #                                        PLACES
 ##########################################################################################
@@ -576,24 +640,25 @@ def logout():
 
 
 def request_api_google(places):
-    virgule = '%2C'
-    pipe = '%7C'
-
-    place_origin = get_place(places[0])
-    place_dest = get_place(places[-1])
-    origin = str(place_origin['lat']) + virgule + str(place_origin['long'])
-    destination = str(place_dest['lat']) + virgule + str(place_dest['long'])
-
-    places = places[1:-1]
-    waypoints = ''
-    for p_id in places:
-        place = get_place(p_id)
-        if place is None:
-            return None, None
-        waypoints += str(place['lat']) + virgule + str(place['long']) + pipe
-    waypoints = waypoints[0:-3]
-
     if USE_API:
+        virgule = '%2C'
+        pipe = '%7C'
+
+        place_origin = get_place(places[0])
+        place_dest = get_place(places[-1])
+        if place_origin is None or place_dest is None:
+            return None, None
+        origin = str(place_origin['lat']) + virgule + str(place_origin['long'])
+        destination = str(place_dest['lat']) + virgule + str(place_dest['long'])
+
+        places = places[1:-1]
+        waypoints = ''
+        for p_id in places:
+            place = get_place(p_id)
+            if place is None:
+                return None, None
+            waypoints += str(place['lat']) + virgule + str(place['long']) + pipe
+        waypoints = waypoints[0:-3]
         try:
             import requests
             url_api_directions = 'https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&waypoints={waypoints}&key=AIzaSyCwFv6LLGksQxm-YFoVrrmbx9ip3xPbdDA&mode=walking'
@@ -685,7 +750,7 @@ def add_circuit():
                            [circuit_inserted['id'], p, index])
                 db.commit()
         resp['status'] = 'OK'
-    except AssertionError:
+    except:
         resp['error'] = 'An error occured while inserting circuit.'
     return render_template('response.json', response=json.dumps(resp))
 
@@ -899,24 +964,6 @@ def get_circuits():
     return render_template('response.json', response=json.dumps(resp))
 
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    resp = {
-        'status': 'KO'
-    }
-    if not session.get('user_id'):
-        resp['error'] = 'Please login or register to access our services.'
-        return render_template('response.json', response=json.dumps(resp))
-    try:
-        f = request.files['image']
-        f.save('./pictures/image.jpg')
-        resp['status'] = 'OK'
-
-    except:
-        resp['error'] = 'An error occured while uploading file.'
-    return render_template('response.json', response=json.dumps(resp))
-
-
 def recalculate_vote_circuit(circuit):
     db = get_db()
     cur = db.execute("SELECT AVG(vote) AS vote_moyen FROM vote_user_circuit WHERE id_circuit=?", [circuit['id']])
@@ -959,6 +1006,7 @@ def vote_circuit():
     except:
         resp['error'] = 'An error occured while voting.'
     return render_template('response.json', response=json.dumps(resp))
+
 
 ##########################################################################################
 #                                     END CIRCUITS
