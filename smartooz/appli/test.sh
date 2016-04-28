@@ -60,6 +60,11 @@ curl "http://127.0.0.1:5000/update-place" -X POST -d '{"id":1,"latitude":45.75,"
 
 echo
 echo
+echo "Vote palce.. Expect OK"
+curl -X POST -d '{"id":1, "note": 4.5}' http://127.0.0.1:5000/vote-place --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
 echo "GET place1 by id.. (lat 45.75) Expect OK"
 curl "http://127.0.0.1:5000/get-place-id/1" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
@@ -77,6 +82,11 @@ echo
 echo
 echo "Edit circuit.. Expect OK"
 curl -X POST -d '{"id":1, "name":"mon circuit","description":"ma 2","keywords":["keyWord-circuit", "2aaaa"],"places":[1]}' http://127.0.0.1:5000/update-circuit --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
+echo "Vote circuit.. Expect OK"
+curl -X POST -d '{"id":1, "note": 5}' http://127.0.0.1:5000/vote-circuit --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo
