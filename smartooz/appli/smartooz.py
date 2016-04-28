@@ -66,10 +66,11 @@ def close_db(error):
 #                                   USEFULL METHODS
 ##########################################################################################
 
-LATITUDE_MAX = 46
-LATITUDE_MIN = 45.6
-LONGITUDE_MAX = 5.0
-LONGITUDE_MIN = 4.7
+LATITUDE_MAX = 45.81
+LATITUDE_MIN = 45.71
+LONGITUDE_MAX = 4.91
+LONGITUDE_MIN = 4.77
+USE_API = False
 
 
 def get_user(user_id):
@@ -112,6 +113,7 @@ def get_circuit(circuit_id):
         [circuit_id])
     circuit['places'] = cur.fetchall()
     return circuit
+
 
 ##########################################################################################
 #                                   END USEFULL METHODS
@@ -253,8 +255,8 @@ def get_place_coord(lat, longitude):
     except:
         resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
-    
-    
+
+
 @app.route('/get-place-radius-coord/<float:lat>,<float:longitude>,<int:radius>', methods=['GET'])
 def get_place_radius_coord(lat, longitude, radius):
     resp = {
@@ -266,8 +268,10 @@ def get_place_radius_coord(lat, longitude, radius):
 
     try:
         db = get_db()
-        cur = db.execute('SELECT * FROM places WHERE (lat>? AND lat<? AND long>? AND long<?)', [lat-(radius*0.009043),lat+(radius*0.009043),longitude-(radius*0.0131043),longitude+(radius*0.0131043)])
-        
+        cur = db.execute('SELECT * FROM places WHERE (lat>? AND lat<? AND long>? AND long<?)',
+                         [lat - (radius * 0.009043), lat + (radius * 0.009043), longitude - (radius * 0.0131043),
+                          longitude + (radius * 0.0131043)])
+
         places = cur.fetchall()
 
         for index, place in enumerate(places):
@@ -527,6 +531,61 @@ def logout():
 ##########################################################################################
 
 
+def request_api_google(places):
+    virgule = '%2C'
+    pipe = '%7C'
+
+    place_origin = get_place(places[0])
+    place_dest = get_place(places[-1])
+    origin = str(place_origin['lat']) + virgule + str(place_origin['long'])
+    destination = str(place_dest['lat']) + virgule + str(place_dest['long'])
+
+    places = places[1:-1]
+    waypoints = ''
+    for p_id in places:
+        place = get_place(p_id)
+        if place is None:
+            return None, None
+        waypoints += str(place['lat']) + virgule + str(place['long']) + pipe
+    waypoints = waypoints[0:-3]
+
+    if USE_API:
+        try:
+            import requests
+            url_api_directions = 'https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&waypoints={waypoints}&key=AIzaSyCwFv6LLGksQxm-YFoVrrmbx9ip3xPbdDA&mode=walking'
+            url_api_elevation = 'https://maps.googleapis.com/maps/api/elevation/json?path={path}&samples={samples}&key=AIzaSyCwFv6LLGksQxm-YFoVrrmbx9ip3xPbdDA&mode=walking'
+
+            resp_direction = requests.get(url_api_directions.format(origin=origin, destination=destination, waypoints=waypoints))
+            result = json.loads(resp_direction.text)
+            legs = result['routes'][0]['legs']
+            path = str(legs[0]['steps'][0]['start_location']['lat']) + virgule + str(legs[0]['steps'][0]['start_location']['lng']) + pipe
+
+            calc_length = 0
+            number_locations = 0
+            for leg in legs:
+                calc_length += leg['distance']['value']
+                for step in leg['steps']:
+                    path += str(step['end_location']['lat']) + virgule + str(step['end_location']['lng']) + pipe
+                    number_locations += 1
+            path = path[0:-3]
+            resp_elevation = requests.get(url_api_elevation.format(path=path, samples=str(number_locations)))
+            result_elevation = json.loads(resp_elevation.text)
+
+            old_elevation_m = -1
+            calc_height = 0
+            for loc in result_elevation["results"]:
+                if old_elevation_m != -1:
+                    diff = old_elevation_m - loc["elevation"]
+                    if diff > 0:
+                        calc_height += diff
+                old_elevation_m = loc["elevation"]
+            return calc_length / 1000, calc_height
+        except:
+            return None, None
+    else:
+        return 3, 20
+
+
 @app.route('/add-circuit', methods=['POST'])
 def add_circuit():
     resp = {
@@ -545,9 +604,10 @@ def add_circuit():
             resp['error'] = 'No places given.'
             return render_template('response.json', response=json.dumps(resp))
 
-        # TODO GMAPS
-        calc_length = 3
-        calc_height = 20
+        calc_length, calc_height = request_api_google(request_json.get('places'))
+        if calc_length is None or calc_height is None:
+            resp['error'] = 'Wrong path : a place does not exists.'
+            return render_template('response.json', response=json.dumps(resp))
 
         db = get_db()
         db.execute(
@@ -581,7 +641,7 @@ def add_circuit():
                            [circuit_inserted['id'], p, index])
                 db.commit()
         resp['status'] = 'OK'
-    except:
+    except AssertionError:
         resp['error'] = 'An error occured while inserting circuit.'
     return render_template('response.json', response=json.dumps(resp))
 
@@ -613,10 +673,14 @@ def update_circuit():
         if not request_json.get('keywords'):
             resp['error'] = 'No keywords given.'
             return render_template('response.json', response=json.dumps(resp))
+        if not request_json.get('places'):
+            resp['error'] = 'No places given.'
+            return render_template('response.json', response=json.dumps(resp))
 
-        # TODO GMAPS
-        calc_length = 3
-        calc_height = 20
+        calc_length, calc_height = request_api_google(request_json.get('places'))
+        if calc_length is None or calc_height is None:
+            resp['error'] = 'Wrong path : a place does not exists.'
+            return render_template('response.json', response=json.dumps(resp))
 
         db = get_db()
         db.execute(
@@ -627,8 +691,9 @@ def update_circuit():
              calc_height,
              circuit_id])
         db.commit()
-        circuit = get_place(circuit_id)
+        circuit = get_circuit(circuit_id)
         db.execute('DELETE FROM circuit_keywords WHERE id_circuit=?', [circuit['id']])
+        db.execute('DELETE FROM circuit_places WHERE id_circuit=?', [circuit['id']])
         db.commit()
         for k in request_json.get('keywords'):
             k = k.upper()
@@ -644,6 +709,13 @@ def update_circuit():
             db.execute('INSERT INTO circuit_keywords (id_circuit, id_keyword) VALUES (?, ?)',
                        [circuit['id'], keyword['id']])
             db.commit()
+        for index, p in enumerate(request_json.get('places')):
+            cur = db.execute('SELECT * FROM places WHERE id=?', [p])
+            place = cur.fetchone()
+            if place:
+                db.execute('INSERT INTO circuit_places (id_circuit, id_place, number_in_list) VALUES (?,?,?)',
+                           [circuit['id'], p, index])
+                db.commit()
 
         resp['status'] = 'OK'
     except:
@@ -781,8 +853,6 @@ def get_circuits():
     except:
         resp['error'] = 'An error occured while getting circuits.'
     return render_template('response.json', response=json.dumps(resp))
-
-
 
 ##########################################################################################
 #                                     END CIRCUITS
