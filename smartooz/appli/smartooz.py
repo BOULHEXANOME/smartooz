@@ -2,6 +2,7 @@ import os, json
 from sqlite3 import dbapi2 as sqlite3
 from flask import Flask, request, session, g, redirect, url_for, abort, \
     render_template, flash, jsonify
+    
 
 app = Flask(__name__)
 
@@ -169,15 +170,16 @@ def download_file(circuit_id, place_id):
             
         file_path = os.path.join('.', 'pictures', path_user, path_circuit, name_file)
         from flask import send_file
-        return send_file(file_path, mimetype='image/jpeg')
-        #return open(file_path).read()
-        resp['status'] = 'OK'
-        #return render_template('response.json', response=json.dumps(resp)), f
+        
+        file_to_send = send_file(file_path, mimetype='image/jpeg')
+        
+        return file_to_send;
 
     except ValueError:
         resp['error'] = 'An error occured while downloading file.'
     return render_template('response.json', response=json.dumps(resp))
-    
+
+        
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
