@@ -12,6 +12,7 @@ def get_db():
         
         
 def add_places():
+    target = 'http://142.4.215.20:1723'
     resp = {
         'status': 'KO'
     }
@@ -23,7 +24,7 @@ def add_places():
     
     #Register if not already done
     pprint("-----Register a user to enter the database-----")
-    url = "http://127.0.0.1:5000/register"
+    url = target + "/register"
     data = {'password': 'hugo', 'username': 'hugo', 'email': 'hugoemail'}
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     r = requests.post(url, data=json.dumps(data), headers=headers)
@@ -35,7 +36,7 @@ def add_places():
         
     pprint("-----Login the user-----")
     #Login
-    url2 = "http://127.0.0.1:5000/login"
+    url2 = target + "/login"
     data2 = {'password': 'hugo', 'username': 'hugo'}
     headers2 = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     r2 = requests.post(url2, data=json.dumps(data2), headers=headers2)
@@ -47,7 +48,7 @@ def add_places():
         print('Success !')
     
     pprint("-----And finally : try to add data-----")
-    '''url3 = "http://127.0.0.1:5000/add-place"
+    '''url3 = "/add-place"
     data3 = {'latitude': '45.631', 'longitude': '4.888', 'address':'ta mere', 'openning_hours':'oui', 'name':'truc', 'description':'non', 'keywords':['truc','machin']}
     headers3 = {'Content-type': 'application/json'}
     r3 = requests.post(url3, cookies=cookies, data=json.dumps(data3), headers=headers3)
@@ -97,7 +98,7 @@ def add_places():
             keys2 = []
         try:  
             #Add new data
-            url3 = "http://127.0.0.1:5000/add-place"
+            url3 = target + "/add-place"
             data3 = {'latitude': lat, 'longitude': long, 'address':adr, 'openning_hours':ope, 'name':nam,'description':des,'keywords':keys}
             headers3 = {'Content-type': 'application/json'}
             r3 = requests.post(url3, cookies=cookies, data=json.dumps(data3), headers=headers3)
@@ -105,6 +106,7 @@ def add_places():
             if z['status'] == 'KO':
                 listErrors.append(x) 
                 nbErrors = nbErrors + 1
+                print(z)
             
         except:
                 print('ERROR : something very bad happened...')
