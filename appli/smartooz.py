@@ -69,9 +69,9 @@ def close_db(error):
 ##########################################################################################
 
 LATITUDE_MAX = 45.81
-LATITUDE_MIN = 45.71
+LATITUDE_MIN = 45.70
 LONGITUDE_MAX = 4.91
-LONGITUDE_MIN = 4.77
+LONGITUDE_MIN = 4.76
 USE_API = False
 
 
