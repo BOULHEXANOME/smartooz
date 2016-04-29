@@ -1,7 +1,7 @@
 flask --app=smartooz initdb
 
-HOST=142.4.215.20
-PORT=1723
+HOST=127.0.0.1 # 142.4.215.20
+PORT=5001
 
 echo "Register.. Expect OK"
 curl -X POST -d '{"password":"hugo","username":"papin2","email":"balec"}' http://$HOST:$PORT/register --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie

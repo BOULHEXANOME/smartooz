@@ -3,7 +3,6 @@ from sqlite3 import dbapi2 as sqlite3
 from flask import Flask, request, session, g, redirect, url_for, abort, \
     render_template, flash, jsonify
     
-
 app = Flask(__name__)
 
 app.config['ALLOWED_EXTENSIONS'] = set(['png', 'jpg', 'jpeg', 'gif'])
@@ -1016,3 +1015,6 @@ def vote_circuit():
 ##########################################################################################
 #                                     END CIRCUITS
 ##########################################################################################
+
+
+app.run(host="127.0.0.1", port=5001)
