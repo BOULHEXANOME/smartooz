@@ -12,7 +12,7 @@ def get_db():
         
         
 def add_places():
-    target = 'http://142.4.215.20:1723'
+    target = 'http://127.0.0.1:5000'
     resp = {
         'status': 'KO'
     }

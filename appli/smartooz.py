@@ -80,7 +80,9 @@ def get_user(user_id):
         return None
     db = get_db()
     cur = db.execute('SELECT * FROM users WHERE id=?', [user_id])
-    return cur.fetchone()
+    user = cur.fetchone()
+    cur.close()
+    return user
 
 
 def get_place(place_id):
@@ -89,12 +91,14 @@ def get_place(place_id):
     db = get_db()
     cur = db.execute('SELECT * FROM places WHERE id=?', [place_id])
     place = cur.fetchone()
+    cur.close()
     if not place:
         return None
     cur = db.execute(
         'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
         [place_id])
     place['keywords'] = cur.fetchall()
+    cur.close()
     return place
 
 
@@ -104,16 +108,19 @@ def get_circuit(circuit_id):
     db = get_db()
     cur = db.execute('SELECT * FROM circuit WHERE id=?', [circuit_id])
     circuit = cur.fetchone()
+    cur.close()
     if not circuit:
         return None
     cur = db.execute(
         'SELECT keywords.name FROM keywords,circuit_keywords WHERE keywords.id=circuit_keywords.id_keyword AND id_circuit=?',
         [circuit_id])
     circuit['keywords'] = cur.fetchall()
+    cur.close()
     cur = db.execute(
         'SELECT id_place FROM circuit_places WHERE id_circuit=?',
         [circuit_id])
     circuit['places'] = cur.fetchall()
+    cur.close()
     return circuit
 
  ##########################################################################################
@@ -149,7 +156,7 @@ def upload_file(circuit_id,place_id):
             db.commit()
             resp['status'] = 'OK'
 
-    except ValueError:
+    except:
         resp['error'] = 'An error occured while uploading file.'
     return render_template('response.json', response=json.dumps(resp))
     
@@ -174,7 +181,7 @@ def download_file(circuit_id, place_id):
         
         return file_to_send;
 
-    except ValueError:
+    except:
         resp['error'] = 'An error occured while downloading file.'
     return render_template('response.json', response=json.dumps(resp))
 
@@ -226,15 +233,18 @@ def add_place():
         cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?',
                          [float(request_json.get('latitude')), float(request_json.get('longitude'))])
         place_inserted = cur.fetchone()
+        cur.close()
         for k in request_json.get('keywords'):
             k = k.upper()
-            cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
+            cur = db.execute('SELECT * FROM keywords WHERE name= ? ', [k])
             keyword = cur.fetchone()
+            cur.close()
             if not keyword:
                 db.execute('INSERT INTO keywords (name) VALUES (?)', [k])
                 db.commit()
                 cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
                 keyword = cur.fetchone()
+                cur.close()
             # on peut inserer la relation place/keyword
             db.execute('INSERT INTO place_keywords (id_place, id_keyword) VALUES (?, ?)',
                        [place_inserted['id'], keyword['id']])
@@ -289,11 +299,13 @@ def get_places():
         db = get_db()
         cur = db.execute('SELECT * FROM places')
         places = cur.fetchall()
+        cur.close()
         for index, place in enumerate(places):
             cur = db.execute(
                 'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
                 [place['id']])
             places[index]['keywords'] = cur.fetchall()
+            cur.close()
         resp['status'] = 'OK'
         resp['places'] = places
     except:
@@ -314,9 +326,11 @@ def get_place_coord(lat, longitude):
         db = get_db()
         cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?', [lat, longitude])
         place = cur.fetchone()
+        cur.close()
         cur = db.execute(
             'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
             [place['id']])
+        cur.close()
         place['keywords'] = cur.fetchall()
         resp['status'] = 'OK'
         resp['place'] = place
@@ -341,12 +355,14 @@ def get_place_radius_coord(lat, longitude, radius):
                           longitude + (radius * 0.0131043)])
 
         places = cur.fetchall()
+        cur.close()
 
         for index, place in enumerate(places):
             cur = db.execute(
                 'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
                 [place['id']])
             places[index]['keywords'] = cur.fetchall()
+            cur.close()
         resp['status'] = 'OK'
         resp['places'] = places
     except:
@@ -395,6 +411,7 @@ def get_places_keyword():
                 'SELECT * FROM places WHERE id IN (SELECT id_place FROM place_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))',
                 [k])
             places = list_places.fetchall()
+            cur.close()
             if first:
                 places_final = places
             else:
@@ -404,6 +421,7 @@ def get_places_keyword():
                 'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
                 [place['id']])
             places_final[index]['keywords'] = cur.fetchall()
+            cur.close()
         resp['status'] = 'OK'
         resp['places'] = places_final
     except:
@@ -464,12 +482,14 @@ def update_place():
             k = k.upper()
             cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
             keyword = cur.fetchone()
+            cur.close()
             if not keyword:
                 db = get_db()
                 db.execute('INSERT INTO keywords (name) VALUES (?)', [k])
                 db.commit()
                 cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
                 keyword = cur.fetchone()
+                cur.close()
             # on peut inserer la relation place/keyword
             db.execute('INSERT INTO place_keywords (id_place, id_keyword) VALUES (?, ?)',
                        [place['id'], keyword['id']])
@@ -496,6 +516,7 @@ def get_all_places_keywords():
         keywords = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_keyword FROM place_keywords)', [])
         resp['status'] = 'OK'
         resp['keywords'] = keywords.fetchall()
+        cur.close()
     except:
         resp['error'] = 'An error occured while getting places keywords.'
     return render_template('response.json', response=json.dumps(resp))
@@ -505,6 +526,7 @@ def recalculate_vote_place(place):
     db = get_db()
     cur = db.execute("SELECT AVG(vote) AS vote_moyen FROM vote_user_place WHERE id_place=?", [place['id']])
     note_moy = cur.fetchone()
+    cur.close()
     db.execute("UPDATE places SET nb_vote=?, note_5=? WHERE id=?", [place['nb_vote']+1, note_moy['vote_moyen'], place['id']])
     db.commit()
 
@@ -531,6 +553,7 @@ def vote_place():
         db = get_db()
         cur = db.execute("SELECT * FROM vote_user_place WHERE id_user=? AND id_place=?", [session['user_id'], place_id])
         vote = cur.fetchone()
+        cur.close()
         if vote is None:
             db.execute("INSERT INTO vote_user_place (id_user, id_place, vote) VALUES (?, ?, ?)", [session['user_id'], place_id, note])
         else:
@@ -538,9 +561,10 @@ def vote_place():
         db.commit()
         cur = db.execute("SELECT * FROM places WHERE id=?", [place_id])
         place = cur.fetchone()
+        cur.close()
         recalculate_vote_place(place)
         resp['status'] = 'OK'
-    except ValueError:
+    except:
         resp['error'] = 'An error occured while voting.'
     return render_template('response.json', response=json.dumps(resp))
 
@@ -561,6 +585,7 @@ def login():
     cur = db.execute('SELECT * FROM users WHERE password=? AND username=?',
                      [password, request_json.get('username', 'bla')])
     user = cur.fetchone()
+    cur.close()
     resp = {
         'status': 'KO'
     }
@@ -589,6 +614,7 @@ def register():
         db = get_db()
         cur = db.execute('SELECT * FROM users WHERE username=?', [username])
         user = cur.fetchone()
+        cur.close()
         if user is None:
             db.execute('INSERT INTO USERS (email, password, username) VALUES (?, ?, ?)',
                        [email, password, username])
@@ -596,6 +622,7 @@ def register():
             cur = db.execute('SELECT * FROM users WHERE password=? AND username=?',
                              [password, request_json.get('username', 'bla')])
             user = cur.fetchone()
+            cur.close()
             if user is not None:
                 session['user_id'] = user['id']
                 resp['status'] = 'OK'
@@ -733,15 +760,18 @@ def add_circuit():
         db.commit()
         cur = db.execute('SELECT * FROM circuit WHERE id=last_insert_rowid()')
         circuit_inserted = cur.fetchone()
+        cur.close()
         for k in request_json.get('keywords'):
             k = k.upper()
             cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
             keyword = cur.fetchone()
+            cur.close()
             if not keyword:
                 db.execute('INSERT INTO keywords (name) VALUES (?)', [k])
                 db.commit()
                 cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
                 keyword = cur.fetchone()
+                cur.close()
             # on peut inserer la relation place/keyword
             db.execute('INSERT INTO circuit_keywords (id_circuit, id_keyword) VALUES (?, ?)',
                        [circuit_inserted['id'], keyword['id']])
@@ -749,6 +779,7 @@ def add_circuit():
         for index, p in enumerate(request_json.get('places')):
             cur = db.execute('SELECT * FROM places WHERE id=?', [p])
             place = cur.fetchone()
+            cur.close()
             if place:
                 db.execute('INSERT INTO circuit_places (id_circuit, id_place, number_in_list) VALUES (?,?,?)',
                            [circuit_inserted['id'], p, index])
@@ -812,12 +843,14 @@ def update_circuit():
             k = k.upper()
             cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
             keyword = cur.fetchone()
+            cur.close()
             if not keyword:
                 db = get_db()
                 db.execute('INSERT INTO keywords (name) VALUES (?)', [k])
                 db.commit()
                 cur = db.execute('SELECT * FROM keywords WHERE name=?', [k])
                 keyword = cur.fetchone()
+                cur.close()
             # on peut inserer la relation place/keyword
             db.execute('INSERT INTO circuit_keywords (id_circuit, id_keyword) VALUES (?, ?)',
                        [circuit['id'], keyword['id']])
@@ -825,6 +858,7 @@ def update_circuit():
         for index, p in enumerate(request_json.get('places')):
             cur = db.execute('SELECT * FROM places WHERE id=?', [p])
             place = cur.fetchone()
+            cur.close()
             if place:
                 db.execute('INSERT INTO circuit_places (id_circuit, id_place, number_in_list) VALUES (?,?,?)',
                            [circuit['id'], p, index])
@@ -878,6 +912,7 @@ def get_circuits_keyword():
                 'SELECT * FROM circuit WHERE id IN (SELECT id_circuit FROM circuit_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))',
                 [k])
             circuits = list_circuits.fetchall()
+            cur.close()
             if first:
                 circuits_final = circuits
             else:
@@ -887,6 +922,7 @@ def get_circuits_keyword():
                 'SELECT keywords.name FROM keywords,circuit_keywords WHERE keywords.id=circuit_keywords.id_keyword AND id_circuit=?',
                 [circuit['id']])
             circuits_final[index]['keywords'] = cur.fetchall()
+            cur.close()
         resp['status'] = 'OK'
         resp['circuits'] = circuits_final
     except:
@@ -908,6 +944,7 @@ def get_all_circuits_keywords():
         circuits = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_circuit FROM circuit_keywords)', [])
         resp['status'] = 'OK'
         resp['keywords'] = circuits.fetchall()
+        cur.close()
     except:
         resp['error'] = 'An error occured while getting circuits keywords.'
     return render_template('response.json', response=json.dumps(resp))
@@ -956,11 +993,13 @@ def get_circuits():
         db = get_db()
         cur = db.execute('SELECT * FROM circuit')
         list_circuits = cur.fetchall()
+        cur.close()
         for index, circuit in enumerate(list_circuits):
             cur = db.execute(
                 'SELECT keywords.name FROM keywords,circuit_keywords WHERE keywords.id=circuit_keywords.id_keyword AND id_circuit=?',
                 [circuit['id']])
             list_circuits[index]['keywords'] = cur.fetchall()
+            cur.close()
         resp['status'] = 'OK'
         resp['circuits'] = list_circuits
     except:
@@ -972,6 +1011,7 @@ def recalculate_vote_circuit(circuit):
     db = get_db()
     cur = db.execute("SELECT AVG(vote) AS vote_moyen FROM vote_user_circuit WHERE id_circuit=?", [circuit['id']])
     note_moy = cur.fetchone()
+    cur.close()
     db.execute("UPDATE circuit SET nb_vote=?, note_5=? WHERE id=?", [circuit['nb_vote']+1, note_moy['vote_moyen'], circuit['id']])
     db.commit()
 
@@ -998,6 +1038,7 @@ def vote_circuit():
         db = get_db()
         cur = db.execute("SELECT * FROM vote_user_circuit WHERE id_user=? AND id_circuit=?", [session['user_id'], circuit_id])
         vote = cur.fetchone()
+        cur.close()
         if vote is None:
             db.execute("INSERT INTO vote_user_circuit (id_user, id_circuit, vote) VALUES (?, ?, ?)", [session['user_id'], circuit_id, note])
         else:
@@ -1005,6 +1046,7 @@ def vote_circuit():
         db.commit()
         cur = db.execute("SELECT * FROM circuit WHERE id=?", [circuit_id])
         circuit = cur.fetchone()
+        cur.close()
         recalculate_vote_circuit(circuit)
         resp['status'] = 'OK'
     except:
