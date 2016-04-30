@@ -330,11 +330,11 @@ def get_place_coord(lat, longitude):
         cur = db.execute(
             'SELECT keywords.name FROM keywords,place_keywords WHERE keywords.id=place_keywords.id_keyword AND id_place=?',
             [place['id']])
-        cur.close()
         place['keywords'] = cur.fetchall()
+        cur.close()
         resp['status'] = 'OK'
         resp['place'] = place
-    except:
+    except ValueError:
         resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
 
@@ -407,10 +407,10 @@ def get_places_keyword():
         first = True
         db = get_db()
         for k in keywords:
-            list_places = db.execute(
+            cur = db.execute(
                 'SELECT * FROM places WHERE id IN (SELECT id_place FROM place_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))',
                 [k])
-            places = list_places.fetchall()
+            places = cur.fetchall()
             cur.close()
             if first:
                 places_final = places
@@ -908,10 +908,10 @@ def get_circuits_keyword():
         first = True
         db = get_db()
         for k in keywords:
-            list_circuits = db.execute(
+            cur = db.execute(
                 'SELECT * FROM circuit WHERE id IN (SELECT id_circuit FROM circuit_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))',
                 [k])
-            circuits = list_circuits.fetchall()
+            circuits = cur.fetchall()
             cur.close()
             if first:
                 circuits_final = circuits
@@ -941,9 +941,9 @@ def get_all_circuits_keywords():
 
     try:
         db = get_db()
-        circuits = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_circuit FROM circuit_keywords)', [])
+        cur = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_circuit FROM circuit_keywords)', [])
         resp['status'] = 'OK'
-        resp['keywords'] = circuits.fetchall()
+        resp['keywords'] = cur.fetchall()
         cur.close()
     except:
         resp['error'] = 'An error occured while getting circuits keywords.'
