@@ -39,7 +39,7 @@ curl http://$HOST:$PORT/get-places --header "Content-Type:application/json" -c /
 echo
 echo
 echo "GET places by keywords.. Expect OK"
-curl "http://$HOST:$PORT/get-places-keyword/?keywords=sfm&keywords=c%20est%20g%C3%A9nial" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+curl "http://$HOST:$PORT/get-places-keyword?keywords=sfm&keywords=c%20est%20g%C3%A9nial" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo
@@ -63,7 +63,7 @@ curl "http://$HOST:$PORT/update-place" -X POST -d '{"id":1,"latitude":45.75,"lon
 
 echo
 echo
-echo "Vote palce.. Expect OK"
+echo "Vote place.. Expect OK"
 curl -X POST -d '{"id":1, "note": 4.5}' http://$HOST:$PORT/vote-place --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
@@ -98,6 +98,16 @@ curl "http://$HOST:$PORT/get-circuit-id/1" --header "Content-Type:application/js
 
 echo
 echo
+echo "Set circuit done by user.. Expect OK"
+curl -X POST -d '{"id":1}' "http://$HOST:$PORT/circuit-done" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
+echo "GET circuits done.. Expect OK"
+curl "http://$HOST:$PORT/get-id-circuits-done" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+
+echo
+echo
 echo "upload.. Expect OK"
 curl -X POST -F "image=@./test_upload.jpg" "http://$HOST:$PORT/upload/1,1" -c /tmp/cookie -b /tmp/cookie
 
@@ -106,6 +116,8 @@ echo
 echo "upload.. Expect OK"
 curl -X POST -F "image=@./test_upload.jpg" "http://$HOST:$PORT/upload/1,2" -c /tmp/cookie -b /tmp/cookie
 
+
+rm -f ./test_download_ok.jpg
 echo
 echo
 echo "download.. Expect OK"
@@ -114,7 +126,7 @@ curl -X GET "http://$HOST:$PORT/download-picture/1,1" -c /tmp/cookie -b /tmp/coo
 echo
 echo
 echo "GET circuits by keyword.. Expect OK"
-curl "http://$HOST:$PORT/get-circuits-keyword/?keywords=keyWord-circuit&keywords=2aaaa" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
+curl "http://$HOST:$PORT/get-circuits-keyword?keywords=keyWord-circuit&keywords=2aaaa" --header "Content-Type:application/json" -c /tmp/cookie -b /tmp/cookie
 
 echo
 echo

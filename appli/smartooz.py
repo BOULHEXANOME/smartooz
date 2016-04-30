@@ -117,7 +117,7 @@ def get_circuit(circuit_id):
     circuit['keywords'] = cur.fetchall()
     cur.close()
     cur = db.execute(
-        'SELECT id_place FROM circuit_places WHERE id_circuit=?',
+        'SELECT id_place FROM circuit_places WHERE id_circuit=? ORDER BY number_in_list ASC',
         [circuit_id])
     circuit['places'] = cur.fetchall()
     cur.close()
@@ -176,11 +176,8 @@ def download_file(circuit_id, place_id):
             
         file_path = os.path.join('.', 'pictures', path_user, path_circuit, name_file)
         from flask import send_file
-        
         file_to_send = send_file(file_path, mimetype='image/jpeg')
-        
-        return file_to_send;
-
+        return file_to_send
     except:
         resp['error'] = 'An error occured while downloading file.'
     return render_template('response.json', response=json.dumps(resp))
@@ -280,6 +277,8 @@ def delete_place():
 
     db = get_db()
     db.execute('DELETE FROM places WHERE id=?', [place['id']])
+    db.execute('DELETE FROM circuit_places WHERE id_place=?', [place['id']])
+    db.execute('DELETE FROM vote_user_place WHERE id_place=?', [place['id']])
     db.execute('DELETE FROM place_keywords WHERE id_place=?', [place['id']])
     db.commit()
     resp['status'] = 'OK'
@@ -390,7 +389,7 @@ def get_place_id(place_id):
     return render_template('response.json', response=json.dumps(resp))
 
 
-@app.route('/get-places-keyword/', methods=['GET'])
+@app.route('/get-places-keyword', methods=['GET'])
 def get_places_keyword():
     resp = {
         'status': 'KO'
@@ -513,9 +512,9 @@ def get_all_places_keywords():
 
     try:
         db = get_db()
-        keywords = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_keyword FROM place_keywords)', [])
+        cur = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_keyword FROM place_keywords)', [])
         resp['status'] = 'OK'
-        resp['keywords'] = keywords.fetchall()
+        resp['keywords'] = cur.fetchall()
         cur.close()
     except:
         resp['error'] = 'An error occured while getting places keywords.'
@@ -648,6 +647,7 @@ def delete_user():
         return render_template('response.json', response=json.dumps(resp))
     db = get_db()
     db.execute('DELETE FROM users WHERE id=?', [user['id']])
+    db.execute('DELETE FROM user_did_circuit WHERE id_user=?', [user['id']])
     db.commit()
     session.pop('user_id', None)
     resp['status'] = 'OK'
@@ -891,7 +891,7 @@ def get_circuit_id(circuit_id):
     return render_template('response.json', response=json.dumps(resp))
 
 
-@app.route('/get-circuits-keyword/', methods=['GET'])
+@app.route('/get-circuits-keyword', methods=['GET'])
 def get_circuits_keyword():
     resp = {
         'status': 'KO'
@@ -974,6 +974,8 @@ def delete_circuit():
 
     db = get_db()
     db.execute('DELETE FROM circuit WHERE id=?', [circuit['id']])
+    db.execute('DELETE FROM circuit_places WHERE id_circuit=?', [circuit['id']])
+    db.execute('DELETE FROM vote_user_circuit WHERE id_circuit=?', [circuit['id']])
     db.execute('DELETE FROM circuit_keywords WHERE id_circuit=?', [circuit['id']])
     db.commit()
     resp['status'] = 'OK'
@@ -1051,6 +1053,51 @@ def vote_circuit():
         resp['status'] = 'OK'
     except:
         resp['error'] = 'An error occured while voting.'
+    return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/circuit-done', methods=['POST'])
+def circuit_done():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+    request_json = request.get_json()
+    circuit_id = request_json.get('id')
+    circuit = get_circuit(circuit_id)
+    if circuit is None:
+        resp['error'] = "Circuit not found."
+        return render_template('response.json', response=json.dumps(resp))
+    try:
+        db = get_db()
+        import datetime
+        db.execute("INSERT INTO user_did_circuit (id_user, id_circuit, date_performed) VALUES (?, ?, ?)", [session['user_id'], circuit_id, datetime.datetime.now()])
+        db.commit()
+        resp['status'] = 'OK'
+    except ValueError:
+        resp['error'] = 'An error occured while giving done circuit.'
+    return render_template('response.json', response=json.dumps(resp))
+
+
+@app.route('/get-id-circuits-done', methods=['GET'])
+def get_id_circuits_done():
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+    try:
+        db = get_db()
+        cur = db.execute("SELECT id_circuit, date_performed FROM user_did_circuit WHERE id_user=?", [session['user_id']])
+        circuits = cur.fetchall()
+        cur.close()
+        resp['status'] = 'OK'
+        resp['circuits'] = circuits
+    except ValueError:
+        resp['error'] = 'An error occured while getting done circuits\' id.'
     return render_template('response.json', response=json.dumps(resp))
 
 

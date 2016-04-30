@@ -88,6 +88,14 @@ CREATE TABLE vote_user_circuit (
   UNIQUE(id_circuit, id_user)
 );
 
+DROP TABLE IF EXISTS user_did_circuit;
+CREATE TABLE user_did_circuit (
+  id_user integer not null,
+  id_circuit integer not null,
+  date_performed datetime not null,
+  UNIQUE(id_circuit, id_user, date_performed)
+);
+
 DELETE FROM users;
 DELETE FROM places;
 DELETE FROM place_keywords;
@@ -96,3 +104,4 @@ DELETE FROM circuit;
 DELETE FROM circuit_places;
 DELETE FROM vote_user_place;
 DELETE FROM vote_user_circuit;
+DELETE FROM user_did_circuit;
