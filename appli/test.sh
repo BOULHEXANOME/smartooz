@@ -122,6 +122,7 @@ echo
 echo
 echo "download.. Expect OK"
 curl -X GET "http://$HOST:$PORT/download-picture/1,1" -c /tmp/cookie -b /tmp/cookie > ./test_download_ok.jpg
+ls -la ./test_download_ok.jpg
 
 echo
 echo
