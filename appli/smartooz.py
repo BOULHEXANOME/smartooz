@@ -630,7 +630,7 @@ def register():
                 resp['username'] = user['username']
                 resp['email'] = user['email']
         else:
-            resp['error'] = 'Sorry, username already exists.'
+            resp['error'] = 'Sorry, username/email already exists.'
     return render_template('response.json', response=json.dumps(resp))
 
 
@@ -909,6 +909,11 @@ def get_circuits_keyword():
         circuits_final = []
         first = True
         db = get_db()
+        if not keywords:
+            cur = db.execute(
+                'SELECT * FROM circuit', [])
+            circuits_final = cur.fetchall()
+            cur.close()
         for k in keywords:
             cur = db.execute(
                 'SELECT * FROM circuit WHERE id IN (SELECT id_circuit FROM circuit_keywords WHERE id_keyword IN (SELECT id FROM keywords WHERE name=?))',
