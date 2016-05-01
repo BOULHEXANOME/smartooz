@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id integer primary key autoincrement,
-  email text not null,
+  email text unique not null,
   password text not null,
   username text unique not null
 );

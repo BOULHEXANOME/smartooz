@@ -581,8 +581,8 @@ def login():
     request_json = request.get_json()
     password = hashlib.sha256(request_json.get('password', 'bla').encode('utf-8')).hexdigest()
     db = get_db()
-    cur = db.execute('SELECT * FROM users WHERE password=? AND username=?',
-                     [password, request_json.get('username', 'bla')])
+    cur = db.execute('SELECT * FROM users WHERE password=? AND (username=? OR email=?)',
+                     [password, request_json.get('username'), request_json.get('username')])
     user = cur.fetchone()
     cur.close()
     resp = {
@@ -593,6 +593,8 @@ def login():
         resp['status'] = 'OK'
         resp['username'] = user['username']
         resp['email'] = user['email']
+    else:
+        resp['error'] = 'Could not find a user with this login/password.'
     return render_template('response.json', response=json.dumps(resp))
 
 
@@ -611,15 +613,15 @@ def register():
         resp['error'] = 'You didn\'t fill all the fields.'
     else:
         db = get_db()
-        cur = db.execute('SELECT * FROM users WHERE username=?', [username])
+        cur = db.execute('SELECT * FROM users WHERE (username=? OR email=?)', [username, email])
         user = cur.fetchone()
         cur.close()
         if user is None:
             db.execute('INSERT INTO USERS (email, password, username) VALUES (?, ?, ?)',
                        [email, password, username])
             db.commit()
-            cur = db.execute('SELECT * FROM users WHERE password=? AND username=?',
-                             [password, request_json.get('username', 'bla')])
+            cur = db.execute('SELECT * FROM users WHERE password=? AND (username=? OR email=?)',
+                             [password, username, email])
             user = cur.fetchone()
             cur.close()
             if user is not None:
