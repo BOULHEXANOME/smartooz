@@ -2,21 +2,13 @@ import json
 from pprint import pprint
 import requests
 
-def get_db():
-    """Opens a new database connection if there is none yet for the
-    current application context.
-    """
-    if not hasattr(g, 'sqlite_db'):
-        g.sqlite_db = connect_db()
-    return g.sqlite_db
-        
-        
+
 def add_places():
-    target = 'http://127.0.0.1:5000'
+    target = 'http://142.4.215.20:1723'
     resp = {
         'status': 'KO'
     }
-    with open('Row1.json') as data_file:
+    with open('Row1_50.json') as data_file:
         dataFile = json.load(data_file)
     x = -1
     listErrors = []
