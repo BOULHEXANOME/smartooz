@@ -943,7 +943,7 @@ def get_all_circuits_keywords():
 
     try:
         db = get_db()
-        cur = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_circuit FROM circuit_keywords)', [])
+        cur = db.execute('SELECT * FROM keywords WHERE id IN (SELECT id_keyword FROM circuit_keywords)', [])
         resp['status'] = 'OK'
         resp['keywords'] = cur.fetchall()
         cur.close()
