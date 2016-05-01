@@ -656,7 +656,7 @@ def delete_user():
     return render_template('response.json', response=json.dumps(resp))
 
 
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 def logout():
     session.pop('user_id', None)
     resp = {
