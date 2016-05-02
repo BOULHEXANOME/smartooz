@@ -48,7 +48,7 @@ CREATE TABLE circuit_places (
   id_circuit integer not null,
   id_place integer not null,
   number_in_list integer not null,
-  UNIQUE(id_place, id_circuit)
+  UNIQUE(id_place, id_circuit, number_in_list)
 );
 
 DROP TABLE IF EXISTS photo_circuit_place_user;
