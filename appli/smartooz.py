@@ -333,7 +333,7 @@ def get_place_coord(lat, longitude):
         cur.close()
         resp['status'] = 'OK'
         resp['place'] = place
-    except ValueError:
+    except:
         resp['error'] = 'An error occured while getting place.'
     return render_template('response.json', response=json.dumps(resp))
 
@@ -1088,7 +1088,7 @@ def circuit_done():
         db.execute("INSERT INTO user_did_circuit (id_user, id_circuit, date_performed) VALUES (?, ?, ?)", [session['user_id'], circuit_id, datetime.datetime.now()])
         db.commit()
         resp['status'] = 'OK'
-    except ValueError:
+    except:
         resp['error'] = 'An error occured while giving done circuit.'
     return render_template('response.json', response=json.dumps(resp))
 
@@ -1108,7 +1108,7 @@ def get_id_circuits_done():
         cur.close()
         resp['status'] = 'OK'
         resp['circuits'] = circuits
-    except ValueError:
+    except:
         resp['error'] = 'An error occured while getting done circuits\' id.'
     return render_template('response.json', response=json.dumps(resp))
 
