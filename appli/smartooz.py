@@ -786,6 +786,16 @@ def add_circuit():
                 db.execute('INSERT INTO circuit_places (id_circuit, id_place, number_in_list) VALUES (?,?,?)',
                            [circuit_inserted['id'], p, index])
                 db.commit()
+                
+                cur = db.execute('SELECT * FROM place_keywords WHERE id_place=?', [p])
+                keywords = cur.fetchall()
+                cur.close()
+                    
+                for index, k in enumerate(keywords):
+                    db.execute('INSERT INTO circuit_keywords (id_circuit, id_keyword) VALUES (?,?)',
+                                   [circuit_inserted['id'], k['id_keyword']])
+                    db.commit()
+                          
         resp['status'] = 'OK'
     except:
         resp['error'] = 'An error occured while inserting circuit.'
