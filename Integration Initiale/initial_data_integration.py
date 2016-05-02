@@ -77,15 +77,15 @@ def add_places():
              des = dataFile[str(x)]["description"]
         except:
              des = "rien a afficher"
-        keys = 'Lyon'
+        keys = []
         try:
-            keys1 = dataFile[str(x)]["type_detail"]
-            keys=keys1+';'+keys
+            keys1 = dataFile[str(x)]["type_detail"].split(';')
+            keys = keys1 + keys
         except:
             keys1 = []
         try:
             keys2 = dataFile[str(x)]["commune"]
-            keys=keys2+';'+keys
+            keys = keys2 + keys
         except:
             keys2 = []
         try:  

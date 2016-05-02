@@ -910,8 +910,7 @@ def get_circuits_keyword():
         first = True
         db = get_db()
         if not keywords:
-            cur = db.execute(
-                'SELECT * FROM circuit', [])
+            cur = db.execute('SELECT * FROM circuit', [])
             circuits_final = cur.fetchall()
             cur.close()
         for k in keywords:
@@ -930,6 +929,12 @@ def get_circuits_keyword():
                 [circuit['id']])
             circuits_final[index]['keywords'] = cur.fetchall()
             cur.close()
+            cur = db.execute(
+                'SELECT id_place FROM circuit_places WHERE id_circuit=?',
+                [circuit['id']])
+            circuits_final[index]['places_id'] = cur.fetchall()
+            cur.close()
+
         resp['status'] = 'OK'
         resp['circuits'] = circuits_final
     except:
