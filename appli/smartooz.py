@@ -932,7 +932,7 @@ def get_circuits_keyword():
             cur = db.execute(
                 'SELECT id_place FROM circuit_places WHERE id_circuit=?',
                 [circuit['id']])
-            circuits_final[index]['places_id'] = cur.fetchall()
+            circuits_final[index]['places'] = cur.fetchall()
             cur.close()
 
         resp['status'] = 'OK'
