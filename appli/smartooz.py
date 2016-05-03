@@ -846,6 +846,7 @@ def add_circuit():
                            [circuit_inserted['id'], p, index])
                 db.commit()
         resp['status'] = 'OK'
+        resp['id'] = circuit_inserted['id']
     except:
         resp['error'] = 'An error occured while inserting circuit.'
     return render_template('response.json', response=json.dumps(resp))
