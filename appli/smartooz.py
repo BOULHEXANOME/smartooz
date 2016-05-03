@@ -177,16 +177,21 @@ def upload_image_circuit(circuit_id):
         resp['error'] = 'You are not allowed to access or modify this ressource.'
         return render_template('response.json', response=json.dumps(resp))
     try:
-        f = request.files['image']
+        base64_image = request.form.get('base64')
+        if not base64_image:
+            resp['error'] = 'Empty image.'
+            return render_template('response.json', response=json.dumps(resp))
 
-        if f and allowed_file(f.filename):
-            path_circuit = 'circuits'
-            name_file = str(circuit_id)
+        import base64
+        image = base64.b64decode(base64_image)
+        path_circuit = 'circuits'
+        name_file = str(circuit_id)
 
-            if not os.path.exists(os.path.join('pictures', path_circuit)):
-                os.makedirs(os.path.join('pictures', path_circuit))
-            f.save(os.path.join('.', 'pictures', path_circuit, name_file))
-            resp['status'] = 'OK'
+        if not os.path.exists(os.path.join('pictures', path_circuit)):
+            os.makedirs(os.path.join('pictures', path_circuit))
+        with open(os.path.join('.', 'pictures', path_circuit, name_file), "wb") as f:
+            f.write(image)
+        resp['status'] = 'OK'
     except:
         resp['error'] = 'An error occured while uploading file.'
     return render_template('response.json', response=json.dumps(resp))

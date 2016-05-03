@@ -10,7 +10,7 @@ def add_places():
     resp = {
         'status': 'KO'
     }
-    with open('Row1_50.json') as data_file:
+    with open(sys.argv[1]) as data_file:
         dataFile = json.load(data_file)
     x = -1
     listErrors = []
