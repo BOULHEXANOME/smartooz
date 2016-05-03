@@ -1,6 +1,8 @@
 import json
 from pprint import pprint
 import requests
+import urllib.request
+import sys, traceback
 
 
 def add_places():
@@ -52,7 +54,10 @@ def add_places():
             y = dataFile[str(x)]["id"]
         except:
             break
-            
+        try:
+            imageUrl = dataFile[str(x)]["imageURL"]
+        except:
+            imageUrl = "null"
         try:
             lat = dataFile[str(x)]["latitude"]
         except:
@@ -91,7 +96,7 @@ def add_places():
         try:  
             #Add new data
             url3 = target + "/add-place"
-            data3 = {'latitude': lat, 'longitude': long, 'address':adr, 'openning_hours':ope, 'name':nam,'description':des,'keywords':keys}
+            data3 = {'latitude': lat, 'longitude': long, 'address':adr, 'openning_hours':ope, 'name':nam,'description':des,'keywords':keys,'image':imageUrl}
             headers3 = {'Content-type': 'application/json'}
             r3 = requests.post(url3, cookies=cookies, data=json.dumps(data3), headers=headers3)
             z = json.loads(r3.text)
@@ -99,11 +104,11 @@ def add_places():
                 listErrors.append(x) 
                 nbErrors = nbErrors + 1
                 print(z)
-            
         except:
-                print('ERROR : something very bad happened...')
-                print('Exiting treatment')
-                break
+            print('ERROR : something very bad happened...')
+            traceback.print_exc()
+            print('Exiting treatment')
+            break
     pprint('-----The following objects were not inserted : -----')
     print(listErrors)
     print('-----Success rate : -----')
