@@ -123,14 +123,16 @@ def get_circuit(circuit_id):
     cur.close()
     return circuit
 
+
  ##########################################################################################
 #                                   END USEFULL METHODS
 ##########################################################################################
 #                                        PICTURES
 ##########################################################################################
 
+
 @app.route('/upload/<int:circuit_id>,<int:place_id>', methods=['POST'])
-def upload_file(circuit_id,place_id):
+def upload_file(circuit_id, place_id):
     resp = {
         'status': 'KO'
     }
@@ -159,7 +161,36 @@ def upload_file(circuit_id,place_id):
     except:
         resp['error'] = 'An error occured while uploading file.'
     return render_template('response.json', response=json.dumps(resp))
-    
+
+
+@app.route('/upload-image-circuit/<int:circuit_id>', methods=['POST'])
+def upload_image_circuit(circuit_id):
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+    circuit = get_circuit(circuit_id)
+
+    if circuit['id_user'] != session['user_id']:
+        resp['error'] = 'You are not allowed to access or modify this ressource.'
+        return render_template('response.json', response=json.dumps(resp))
+    try:
+        f = request.files['image']
+
+        if f and allowed_file(f.filename):
+            path_circuit = 'circuits'
+            name_file = str(circuit_id)
+
+            if not os.path.exists(os.path.join('pictures', path_circuit)):
+                os.makedirs(os.path.join('pictures', path_circuit))
+            f.save(os.path.join('.', 'pictures', path_circuit, name_file))
+            resp['status'] = 'OK'
+    except:
+        resp['error'] = 'An error occured while uploading file.'
+    return render_template('response.json', response=json.dumps(resp))
+
     
 @app.route('/download-picture/<int:circuit_id>,<int:place_id>', methods=['GET'])
 def download_file(circuit_id, place_id):
@@ -182,10 +213,32 @@ def download_file(circuit_id, place_id):
         resp['error'] = 'An error occured while downloading file.'
     return render_template('response.json', response=json.dumps(resp))
 
-        
+
+@app.route('/download-picture/<int:circuit_id>', methods=['GET'])
+def download_image_circuit(circuit_id):
+    resp = {
+        'status': 'KO'
+    }
+    if not session.get('user_id'):
+        resp['error'] = 'Please login or register to access our services.'
+        return render_template('response.json', response=json.dumps(resp))
+    try:
+        path_circuit = 'circuits'
+        name_file = str(circuit_id)
+
+        file_path = os.path.join('.', 'pictures', path_circuit, name_file)
+        from flask import send_file
+        file_to_send = send_file(file_path, mimetype='image/jpeg')
+        return file_to_send
+    except:
+        resp['error'] = 'An error occured while downloading file.'
+    return render_template('response.json', response=json.dumps(resp))
+
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
+
 
 ##########################################################################################
 #                                   END PICTURES
