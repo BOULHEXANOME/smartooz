@@ -40,6 +40,7 @@ CREATE TABLE places (
   id_user integer not null,
   note_5 float not null,
   nb_vote integer not null,
+  image text,
   UNIQUE(lat, long)
 );
 

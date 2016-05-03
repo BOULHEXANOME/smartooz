@@ -269,7 +269,7 @@ def add_place():
 
         db = get_db()
         db.execute(
-            'INSERT INTO places (lat, long, address, phone, website, openning_hours, name, description, id_user, note_5, nb_vote) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)',
+            'INSERT INTO places (lat, long, address, phone, website, openning_hours, name, description, id_user, note_5, nb_vote, url_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?)',
             [float(request_json.get('latitude')),
              float(request_json.get('longitude')),
              request_json.get('address'),
@@ -278,7 +278,8 @@ def add_place():
              request_json.get('openning_hours'),
              request_json.get('name'),
              request_json.get('description'),
-             session.get('user_id')])
+             session.get('user_id'),
+             request_json.get('image')])
         db.commit()
         cur = db.execute('SELECT * FROM places WHERE lat=? AND long=?',
                          [float(request_json.get('latitude')), float(request_json.get('longitude'))])
