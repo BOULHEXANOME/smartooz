@@ -6,7 +6,7 @@ import sys, traceback
 
 
 def add_places():
-    target = 'http://142.4.215.20:1723'
+    target = 'http://142.4.215.20:5001'
     resp = {
         'status': 'KO'
     }
@@ -55,25 +55,25 @@ def add_places():
         except:
             break
         try:
-            imageUrl = dataFile[str(x)]["imageURL"]
+            imageUrl = dataFile[str(x)]["URL_Recherche1"]
         except:
-            imageUrl = "null"
+            imageUrl = None
         try:
             lat = dataFile[str(x)]["latitude"]
         except:
-            lat = "null"
+            lat = None
         try:
             long = dataFile[str(x)]["longitude"]
         except:
-            long = "null"
+            long = None
         try:
             adr = dataFile[str(x)]["address"]
         except:
-            adr = "null"
+            adr = None
         try:
             ope = dataFile[str(x)]["openning_hours"]
         except:
-            ope = "null"
+            ope = None
         try:
             nam = dataFile[str(x)]["name"]
         except:
